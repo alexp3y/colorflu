@@ -1,5 +1,5 @@
-const posOrNeg = () => Math.random() < 0.5 ? -1 : 1;
-const randomVelocity = () => Math.random() * posOrNeg() / 2;
+const posNeg = () => Math.random() < 0.5 ? -1 : 1;
+const randomVelocity = () => Math.random() * posNeg() / 2;
 
 class Game {
     constructor() {
@@ -19,7 +19,14 @@ class Game {
                 bubble.move();
             });
         });
+    }
 
+    handleKeypress(event) {
+        if (event.which == '32') {
+            event.preventDefault();
+            if (engine.running)  engine.pause();
+            else engine.run();
+        }        
     }
 }
 
@@ -46,11 +53,15 @@ class Burst {
         this.bubbles = []
 
         for (let i=0; i<bubbleCount; i++) {
-            this.bubbles.push(
-                new Bubble(this.bubbles.length, this.xPos, this.yPos));
-            }
+            this.addBubble();
         }
     }
+    
+    addBubble() {
+        this.bubbles.push(
+            new Bubble(this.bubbles.length, this.xPos, this.yPos));
+    }
+}
     
 class Bubble extends ScreenElement {
     constructor(id, xPos, yPos) {

@@ -23,4 +23,21 @@ class Engine {
             clearInterval(this.gameLoopId);
         }
     }
+
+    handleKeypress(event) {
+        if (event.which == '32') {
+            event.preventDefault();
+            if (engine.running)  engine.pause();
+            else engine.run();
+        } else {
+            this.game.handleKeypress(event);
+        } 
+    }
+
+    handleMousedown(event) {
+        if (engine.running) {
+            let newBurst = engine.game.addBurst(event.pageX, event.pageY);
+            engine.graphics.drawBurst(newBurst);
+        }        
+    }
 }

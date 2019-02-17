@@ -1,5 +1,5 @@
 class Graphics {
-    
+
     renderGame(game) {
         game.bursts.forEach(b => this.redrawBurst(b));
     }
