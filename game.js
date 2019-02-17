@@ -11,15 +11,21 @@ class Game {
     }
 
     update() {
+        this.ship.move();
         this.bursts.forEach(burst => {
             burst.bubbles.forEach(bubble => {
                 bubble.move();
+                // checkShip
             });
         });
     }
 
     handleKeypress(event) {
         console.log('game got it')    
+    }
+
+    handleMousedown(event) {
+        this.addBurst(event.pageX, event.pageY);        
     }
 }
 
@@ -43,8 +49,10 @@ class Burst {
 
 
 class ScreenElement {
-    constructor(id, xPos, yPos, xVel, yVel, color, type) {
+    constructor(id, height, width, xPos, yPos, xVel, yVel, color, type) {
         this.id = id,
+        this.height = height,
+        this.width = width,
         this.xPos = xPos,
         this.yPos = yPos,
         this.xVel = xVel,
@@ -63,15 +71,20 @@ class ScreenElement {
 
 class Bubble extends ScreenElement {
     constructor(id, xPos, yPos) {
-        super(id, xPos, yPos, randomVelocity(), randomVelocity(), randomColor(), 'bubble');
+        super(id, 8, 8, xPos, yPos, randomVelocity(), randomVelocity(), randomColor(), 'bubble');
     }
 }
 
 
 class Ship extends ScreenElement {
     constructor(xPos, yPos) {
-        super('ship1', xPos, yPos, 0, 0, 'blue', 'ship');
+        super('ship1', 10, 5, xPos, yPos, 0, 0, randomColor(), 'ship');
     }
+}
+
+function areElementsCollided(e1, e2) {
+    // check x collision distance
+
 }
 
 

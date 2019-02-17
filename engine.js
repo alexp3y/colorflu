@@ -1,7 +1,6 @@
 class Engine {
     constructor() {
-        this.game = new Game(),
-        this.graphics = new Graphics(),
+        this.game = null,
         this.gameLoopId = null,
         this.refreshRate = 20,
         this.running = false
@@ -9,7 +8,11 @@ class Engine {
 
     run() {
         if (!this.running) {
+            if (this.game == null) {
+                this.game = new Game();
+            }
             this.running = true;
+            
             this.gameLoopId = setInterval(() => {
                 this.game.update();
                 Graphics.renderGame(this.game);
@@ -28,16 +31,17 @@ class Engine {
         console.log(event.which);
         if (event.which == '32') {
             event.preventDefault();
-            if (engine.running)  engine.pause();
-            else engine.run();
+            if (engine.running) {
+                engine.pause();
+            } else {
+                engine.run();
+            }
         } else {
-            this.game.handleKeypress(event);
+            if (engine.running) this.game.handleKeypress(event);
         } 
     }
 
     handleMousedown(event) {
-        if (engine.running) {
-            engine.game.addBurst(event.pageX, event.pageY);
-        }        
+        if (engine.running) this.game.handleMousedown(event);
     }
 }

@@ -20,8 +20,11 @@ html {
     height: 8px;
     width: 8px;
     border-radius: 25px;
-    /* border: solid 1px rgb(255, 0, 255); */
     position: absolute;
-    left: 0px;
-    top: 0px;
+}
+
+.ship {
+    height: 10px;
+    width: 5px;
+    position: absolute;
 }
