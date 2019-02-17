@@ -12,7 +12,7 @@ class Engine {
             this.running = true;
             this.gameLoopId = setInterval(() => {
                 this.game.update();
-                this.graphics.renderGame(this.game);
+                Graphics.renderGame(this.game);
             }, this.refreshRate);
         }
     }
@@ -25,6 +25,7 @@ class Engine {
     }
 
     handleKeypress(event) {
+        console.log(event.which);
         if (event.which == '32') {
             event.preventDefault();
             if (engine.running)  engine.pause();
@@ -36,8 +37,7 @@ class Engine {
 
     handleMousedown(event) {
         if (engine.running) {
-            let newBurst = engine.game.addBurst(event.pageX, event.pageY);
-            engine.graphics.drawBurst(newBurst);
+            engine.game.addBurst(event.pageX, event.pageY);
         }        
     }
 }

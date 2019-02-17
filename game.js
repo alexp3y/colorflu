@@ -1,6 +1,3 @@
-const posNeg = () => Math.random() < 0.5 ? -1 : 1;
-const randomVelocity = () => Math.random() * posNeg() / 2;
-
 class Game {
     constructor() {
         this.ship = new Ship(200, 200),
@@ -22,28 +19,10 @@ class Game {
     }
 
     handleKeypress(event) {
-        if (event.which == '32') {
-            event.preventDefault();
-            if (engine.running)  engine.pause();
-            else engine.run();
-        }        
+        console.log('game got it')    
     }
 }
 
-class ScreenElement {
-    constructor(id, xPos, yPos, xVel, yVel) {
-        this.id = id,
-        this.xPos = xPos,
-        this.yPos = yPos,
-        this.xVel = xVel,
-        this.yVel = yVel
-    }
-    
-    move() {
-        this.xPos += this.xVel;
-        this.yPos += this.yVel;
-    }
-}
 
 class Burst {
     constructor (id, xPos, yPos, bubbleCount) {
@@ -51,7 +30,6 @@ class Burst {
         this.xPos = xPos,
         this.yPos = yPos,
         this.bubbles = []
-
         for (let i=0; i<bubbleCount; i++) {
             this.addBubble();
         }
@@ -59,18 +37,44 @@ class Burst {
     
     addBubble() {
         this.bubbles.push(
-            new Bubble(this.bubbles.length, this.xPos, this.yPos));
-    }
-}
-    
-class Bubble extends ScreenElement {
-    constructor(id, xPos, yPos) {
-        super(id, xPos, yPos, randomVelocity(), randomVelocity());
+            new Bubble(`${this.id}-${this.bubbles.length}`, this.xPos, this.yPos));
     }
 }
 
-class Ship extends ScreenElement {
-    constructor(xPos, yPos) {
-        super(1, xPos, yPos, 0, 0);
+
+class ScreenElement {
+    constructor(id, xPos, yPos, xVel, yVel, color, type) {
+        this.id = id,
+        this.xPos = xPos,
+        this.yPos = yPos,
+        this.xVel = xVel,
+        this.yVel = yVel,
+        this.color = color;
+        
+        Graphics.addElement(this, type)
+    }
+    
+    move() {
+        this.xPos += this.xVel;
+        this.yPos += this.yVel;
     }
 }
+    
+
+class Bubble extends ScreenElement {
+    constructor(id, xPos, yPos) {
+        super(id, xPos, yPos, randomVelocity(), randomVelocity(), randomColor(), 'bubble');
+    }
+}
+
+
+class Ship extends ScreenElement {
+    constructor(xPos, yPos) {
+        super('ship1', xPos, yPos, 0, 0, 'blue', 'ship');
+    }
+}
+
+
+const posNeg = () => Math.random() < 0.5 ? -1 : 1;
+const randomVelocity = () => Math.random() * posNeg() / 2;
+const randomColor = () => Math.floor(Math.random()*16777215).toString(16);
