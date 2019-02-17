@@ -1,45 +1,65 @@
 const posOrNeg = () => Math.random() < 0.5 ? -1 : 1;
-const randomVel = () => Math.random() * posOrNeg() / 2;
+const randomVelocity = () => Math.random() * posOrNeg() / 2;
 
-function Game() {
-    this.bursts = [],
-    this.addBurst = function(xPos, yPos) {
+class Game {
+    constructor() {
+        this.ship = new Ship(200, 200),
+        this.bursts = [];
+    }
+    
+    addBurst(xPos, yPos) {
         let burst = new Burst(this.bursts.length + 1, xPos, yPos, 50);
         this.bursts.push(burst);
         return burst;
     }
-    this.update = function() {
-        this.bursts.forEach(bubble => bubble.move());
+
+    update() {
+        this.bursts.forEach(burst => {
+            burst.bubbles.forEach(bubble => {
+                bubble.move();
+            });
+        });
+
     }
 }
 
-function Burst(id, xPos, yPos, bubbleCount) {
-    this.id = id,
-    this.xPos = xPos,
-    this.yPos = yPos,
-    this.bubbles = [],
-    this.move = function() {
-        this.bubbles.forEach(bubble => bubble.move());
+class ScreenElement {
+    constructor(id, xPos, yPos, xVel, yVel) {
+        this.id = id,
+        this.xPos = xPos,
+        this.yPos = yPos,
+        this.xVel = xVel,
+        this.yVel = yVel
     }
-    for (i=0; i<bubbleCount; i++) {
-        this.bubbles.push(
-            new Bubble(this.bubbles.length, this.xPos, this.yPos, randomVel(), randomVel()));
-    }
-}
-
-function Bubble(id, xPos, yPos, xVel, yVel) {
-    this.id = id,
-    this.xPos = xPos,
-    this.yPos = yPos,
-    this.xVel = xVel,
-    this.yVel = yVel,
-    this.move = function() {
+    
+    move() {
         this.xPos += this.xVel;
         this.yPos += this.yVel;
     }
 }
 
-function Ship() {
-    this.xPos = 300,
-    this.yPos = 300
+class Burst {
+    constructor (id, xPos, yPos, bubbleCount) {
+        this.id = id,
+        this.xPos = xPos,
+        this.yPos = yPos,
+        this.bubbles = []
+
+        for (let i=0; i<bubbleCount; i++) {
+            this.bubbles.push(
+                new Bubble(this.bubbles.length, this.xPos, this.yPos));
+            }
+        }
+    }
+    
+class Bubble extends ScreenElement {
+    constructor(id, xPos, yPos) {
+        super(id, xPos, yPos, randomVelocity(), randomVelocity());
+    }
+}
+
+class Ship extends ScreenElement {
+    constructor(xPos, yPos) {
+        super(1, xPos, yPos, 0, 0);
+    }
 }

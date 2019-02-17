@@ -1,18 +1,20 @@
 const engine = new Engine();
 
 $('document').ready(function() {
-    engine.turnOn();
+    engine.run();
     
     $(document).keypress(function(event){
         if (event.which == '32') {
             event.preventDefault();
             if (engine.running)  engine.pause();
-            else engine.turnOn();
+            else engine.run();
         }
     })
 
     $(document).mousedown(function(event){
-        let newBurst = engine.game.addBurst(event.pageX, event.pageY);
-        engine.graphics.drawBurst(newBurst);
+        if (engine.running) {
+            let newBurst = engine.game.addBurst(event.pageX, event.pageY);
+            engine.graphics.drawBurst(newBurst);
+        }
     })
 })
