@@ -17,9 +17,13 @@ class Graphics {
         $('.container').append(div); 
     }
     
-    static placeElement(screenElement) {
-        let div = $(`#${screenElement.id}`);
-        div.css('left', `${screenElement.xPos}px`);
-        div.css('top', `${screenElement.yPos}px`);
+    static placeElement(element) {
+        let div = $(`#${element.id}`);
+        div.css('left', `${element.xPos}px`);
+        div.css('top', `${element.yPos}px`);
     }
+    
+    static removeElement(element) {
+        $(`#${element.id}`).remove();
+    } 
 }
