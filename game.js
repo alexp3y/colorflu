@@ -8,16 +8,17 @@ const MAX_SPEED = 3;
 
 class Game {
     constructor() {
+        this.scoreboard = new Scoreboard(),
         this.ship = new Ship(200, 200),
         this.bursts = [];
     }
-
     updateGame() {
         // update bursts
         this.bursts.forEach((burst, i) => {
             burst.bubbles.forEach((bubble, i) => {
                 if (areElementsCollided(this.ship, bubble)) {
                     this.ship.eatBubble(burst.removeBubble(i));
+                    this.scoreboard.score++;
                 } else {
                     bubble.move();
                 }
@@ -27,17 +28,14 @@ class Game {
         // move ship
         this.ship.move();
     }
-    
     addBurst(xPos, yPos) {
         let burst = new Burst(this.bursts.length + 1, xPos, yPos, BUBBLES_PER_BURST);
         this.bursts.push(burst);
         return burst;
     }
-
     removeBurst(index) {
         this.bursts.splice(index, 1);
     }
-
     handleKeydown(event) {
         switch (event.key) {
             case 'w':
@@ -61,7 +59,6 @@ class Game {
         }
         this.ship.updateVelocity();
     }
-
     handleKeyup(event) {
         switch (event.key) {
             case 'w':
@@ -85,7 +82,6 @@ class Game {
         }
         this.ship.updateVelocity();
     }
-
     handleMousedown(event) {
         this.addBurst(event.pageX, event.pageY);        
     }
@@ -103,9 +99,7 @@ class Burst {
         }
     }
     addBubble() {
-        let newBubble = new Bubble(`${this.id}-${this.bubbles.length}`, this.xPos, this.yPos);
-        console.log(newBubble.id + ': ' + newBubble.color);
-        this.bubbles.push(newBubble);
+        this.bubbles.push(new Bubble(`${this.id}-${this.bubbles.length}`, this.xPos, this.yPos));
     }
     removeBubble(i) {
         let bubble = this.bubbles.splice(i, 1)[0];
@@ -155,7 +149,6 @@ class Ship extends ScreenElement {
         this.leftGas = false,
         this.rightGas = false;
     }
-
     updateVelocity() {
         // y velocity
         if (this.upGas) {
@@ -171,9 +164,16 @@ class Ship extends ScreenElement {
             this.xVel = (this.leftGas) ? -MAX_SPEED : 0;
         }
     }
-    
     eatBubble(bubble) {
         this.color = bubble.color;
+    }
+}
+
+
+class Scoreboard extends ScreenElement {
+    constructor() {
+        super('scoreboard', 0, 0, 25, 15, 0, 0, 0, 'scoreboard');
+        this.score = 0;
     }
 }
 

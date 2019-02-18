@@ -6,6 +6,7 @@ class Graphics {
                 Graphics.updateElement(bubble);
             });
         });
+        Graphics.updateScoreboard(game.scoreboard);
     }
 
     static addElement(element, type) {
@@ -22,6 +23,11 @@ class Graphics {
         div.css('left', `${element.xPos}px`);
         div.css('top', `${element.yPos}px`);
         div.css('background-color', `#${element.color}`)  
+    }
+    
+    static updateScoreboard(scoreboard) {
+        let div = $(`#${scoreboard.id}`);
+        div.html(scoreboard.score);
     }
     
     static removeElement(element) {

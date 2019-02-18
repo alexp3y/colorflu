@@ -6,6 +6,9 @@ $('document').ready(function() {
     $(document).keyup(keyup);
     $(document).mousedown(mousedown);
 
+    // start game and run engine
+    let boardWidth = $(document).width();
+    let boardHeight = $(document).height();
     engine.run();
 })
 
