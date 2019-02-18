@@ -5,14 +5,15 @@ class Engine {
         this.game = null,
         this.gameLoopId = null,
         this.refreshRate = REFRESH_RATE,
-        this.running = false
+        this.running = false;
+    }
+
+    newGame(boardWidth, boardHeight) {
+        this.game = new Game(boardWidth, boardHeight);
     }
 
     run() {
         if (!this.running) {
-            if (this.game == null) {
-                this.game = new Game();
-            }
             this.running = true;
             this.gameLoopId = setInterval(() => {
                 // game loop //
@@ -20,6 +21,7 @@ class Engine {
                 Graphics.renderGame(this.game);
                 ////
             }, this.refreshRate);
+            Graphics.togglePause(this.game.ship.color);
         }
     }
 
@@ -27,6 +29,7 @@ class Engine {
         if (this.running) {
             this.running = false;
             clearInterval(this.gameLoopId);
+            Graphics.togglePause(this.game.ship.color);
         }
     }
 
@@ -38,9 +41,7 @@ class Engine {
             } else {
                 engine.run();
             }
-        } else {
-            // if (engine.running) this.game.handleKeypress(event);
-        } 
+        }
     }
 
     handleKeydown(event) {

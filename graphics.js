@@ -6,7 +6,16 @@ class Graphics {
                 Graphics.updateElement(bubble);
             });
         });
-        Graphics.updateScoreboard(game.scoreboard);
+        Graphics.updateScore(game.score);
+    }
+
+    static togglePause(color) {
+        $('.pause').css('color', `#${color}`);
+        $('.pause').toggle();
+    }
+
+    static updateScore(score) {
+        $('.scoreboard').html(score);
     }
 
     static addElement(element, type) {

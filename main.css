@@ -34,8 +34,17 @@ html {
 .scoreboard {
     height: 100px;
     width: 200px;
-    position: absolute;
+    position: relative;
     text-align: center;
     font-size: 60px;
     line-height: 100px;
+}
+
+.pause {
+    text-align: center;
+    font-size: 100px;
+    color: red;
+    line-height: 600px;
+    position: relative;
+    font-weight: bolder;
 }

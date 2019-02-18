@@ -4,11 +4,13 @@ const SHIP_WIDTH = 30;
 const BUBBLE_DIAMETER = 8;
 const BUBBLES_PER_BURST = 50;
 
-const MAX_SPEED = 3;
+const SHIP_SPEED = 3;
 
 class Game {
-    constructor() {
-        this.scoreboard = new Scoreboard(),
+    constructor(boardWidth, boardHeight) {
+        this.boardWidth = boardWidth,
+        this.boardHeight = boardHeight,
+        this.score = 0,
         this.ship = new Ship(200, 200),
         this.bursts = [];
     }
@@ -18,14 +20,21 @@ class Game {
             burst.bubbles.forEach((bubble, i) => {
                 if (areElementsCollided(this.ship, bubble)) {
                     this.ship.eatBubble(burst.removeBubble(i));
-                    this.scoreboard.score++;
+                    this.score++;
+                } else if (this.isBubbleOutOfBounds(bubble)) {
+                    burst.removeBubble(i);
                 } else {
                     bubble.move();
                 }
             });
             if (burst.bubbles.length == 0) this.removeBurst(i);
         });
-        // move ship
+        // update ship
+        keepElementWithinContainer(this.ship, 
+            -(this.ship.width * .3), 
+            this.boardWidth + (this.ship.width * .3), 
+            -(this.ship.height * .3), 
+            this.boardHeight + (this.ship.height * .3));
         this.ship.move();
     }
     addBurst(xPos, yPos) {
@@ -35,6 +44,14 @@ class Game {
     }
     removeBurst(index) {
         this.bursts.splice(index, 1);
+    }
+    isBubbleOutOfBounds(bubble) {
+        let xBoundMargin = bubble.width / 2;
+        let yBoundMargin = bubble.height / 2;
+        return (bubble.xPos < -bubble.width || bubble.xPos > this.boardWidth
+                || bubble.yPos < -bubble.height || bubble.yPos > this.boardHeight) 
+            ? true 
+            : false
     }
     handleKeydown(event) {
         switch (event.key) {
@@ -152,16 +169,16 @@ class Ship extends ScreenElement {
     updateVelocity() {
         // y velocity
         if (this.upGas) {
-            this.yVel = (this.downGas) ? 0 : -MAX_SPEED;
+            this.yVel = (this.downGas) ? 0 : -SHIP_SPEED;
         } else {
-            this.yVel = (this.downGas) ? MAX_SPEED : 0;
+            this.yVel = (this.downGas) ? SHIP_SPEED : 0;
         }
         // x velocity
         if (this.rightGas) {
             // right gas on
-            this.xVel = (this.leftGas) ? 0 : MAX_SPEED;
+            this.xVel = (this.leftGas) ? 0 : SHIP_SPEED;
         } else {
-            this.xVel = (this.leftGas) ? -MAX_SPEED : 0;
+            this.xVel = (this.leftGas) ? -SHIP_SPEED : 0;
         }
     }
     eatBubble(bubble) {
@@ -191,6 +208,17 @@ function areElementsCollided(e1, e2) {
         }
     }
     return false;
+}
+
+function keepElementWithinContainer(element, leftWall, rightWall, topWall, bottomWall) {
+    // left wall
+    if (element.xPos <= leftWall && element.xVel < 0) element.xVel = 0; 
+    // right wall
+    if (element.xPos+element.width >= rightWall && element.xVel > 0) element.xVel = 0;
+    // top wall
+    if (element.yPos <= topWall && element.yVel < 0) element.yVel = 0;
+    // bottom wall
+    if (element.yPos+element.height >= bottomWall && element.yVel > 0) element.yVel = 0;
 }
 
 
