@@ -1,12 +1,12 @@
-const SHIP_HEIGHT = 40;
-const SHIP_WIDTH = 20;
+const SHIP_HEIGHT = 50;
+const SHIP_WIDTH = 30;
 
 const BUBBLE_DIAMETER = 8;
 const BUBBLES_PER_BURST = 50;
 
-const MAX_SPEED = 1.5;
-const ACCELERATION_RATE = .2;
-const DECELERATION_RATE = 1.2;
+const MAX_SPEED = 2.2;
+const ACCELERATION_RATE = 2.2;
+const DECELERATION_RATE = 4;
 
 class Game {
     constructor() {
@@ -37,7 +37,7 @@ class Game {
             case 119: // w 
                 if (this.ship.yVel > -MAX_SPEED) {
                     if (this.ship.yVel > 0) {
-                        this.ship.yVel -= DECELERATION_RATE;
+                        this.ship.yVel = (Math.abs(this.ship.yVel) < DECELERATION_RATE) ? 0 : this.ship.yVel - DECELERATION_RATE;
                     } else {
                         this.ship.yVel -= ACCELERATION_RATE;
                     }
@@ -47,7 +47,7 @@ class Game {
             case 97: // a
                 if (this.ship.xVel > -MAX_SPEED) {
                     if (this.ship.xVel > 0) {
-                        this.ship.xVel -= DECELERATION_RATE;
+                        this.ship.xVel = (Math.abs(this.ship.xVel) < DECELERATION_RATE) ? 0 : this.ship.xVel - DECELERATION_RATE;
                     } else {
                         this.ship.xVel -= ACCELERATION_RATE;
                     }
@@ -57,9 +57,9 @@ class Game {
             case 115: // s
                 if (this.ship.yVel < MAX_SPEED) {
                     if (this.ship.yVel < 0) {
-                        this.ship.yVel += DECELERATION_RATE;
+                        this.ship.yVel = (Math.abs(this.ship.yVel) < DECELERATION_RATE) ? 0 : this.ship.yVel + DECELERATION_RATE;
                     } else {
-                        this.ship.yVel += DECELERATION_RATE;
+                        this.ship.yVel += ACCELERATION_RATE;
                     }
                 }
                 break
@@ -67,7 +67,7 @@ class Game {
             case 100: // d
                 if (this.ship.xVel < MAX_SPEED) {
                     if (this.ship.xVel < 0) {
-                        this.ship.xVel += DECELERATION_RATE;
+                        this.ship.xVel = (Math.abs(this.ship.xVel) < DECELERATION_RATE) ? 0 : this.ship.xVel + DECELERATION_RATE;
                     } else {
                         this.ship.xVel += ACCELERATION_RATE;
                     }
