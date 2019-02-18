@@ -1,8 +1,10 @@
+const REFRESH_RATE = 20;
+
 class Engine {
     constructor() {
         this.game = null,
         this.gameLoopId = null,
-        this.refreshRate = 20,
+        this.refreshRate = REFRESH_RATE,
         this.running = false
     }
 
@@ -28,7 +30,6 @@ class Engine {
     }
 
     handleKeypress(event) {
-        console.log(event.which);
         if (event.which == '32') {
             event.preventDefault();
             if (engine.running) {

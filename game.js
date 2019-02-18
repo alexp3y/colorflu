@@ -1,7 +1,12 @@
-const SHIP_HEIGHT = 20;
-const SHIP_WIDTH = 10;
+const SHIP_HEIGHT = 40;
+const SHIP_WIDTH = 20;
+
 const BUBBLE_DIAMETER = 8;
 const BUBBLES_PER_BURST = 50;
+
+const MAX_SPEED = 1.5;
+const ACCELERATION_RATE = .2;
+const DECELERATION_RATE = 1.2;
 
 class Game {
     constructor() {
@@ -16,19 +21,62 @@ class Game {
     }
 
     update() {
-        this.ship.move();
         this.bursts.forEach(burst => {
             burst.bubbles.forEach(bubble => {
-                bubble.move();
                 if (areElementsCollided(this.ship, bubble)) {
                     bubble.destroy();
                 }
+                bubble.move();
             });
         });
+        this.ship.move();
     }
 
     handleKeypress(event) {
-        console.log('game got it')    
+        switch (event.which) {
+            case 119: // w 
+                if (this.ship.yVel > -MAX_SPEED) {
+                    if (this.ship.yVel > 0) {
+                        this.ship.yVel -= DECELERATION_RATE;
+                    } else {
+                        this.ship.yVel -= ACCELERATION_RATE;
+                    }
+                } 
+                break;
+
+            case 97: // a
+                if (this.ship.xVel > -MAX_SPEED) {
+                    if (this.ship.xVel > 0) {
+                        this.ship.xVel -= DECELERATION_RATE;
+                    } else {
+                        this.ship.xVel -= ACCELERATION_RATE;
+                    }
+                }
+                break;
+
+            case 115: // s
+                if (this.ship.yVel < MAX_SPEED) {
+                    if (this.ship.yVel < 0) {
+                        this.ship.yVel += DECELERATION_RATE;
+                    } else {
+                        this.ship.yVel += DECELERATION_RATE;
+                    }
+                }
+                break
+
+            case 100: // d
+                if (this.ship.xVel < MAX_SPEED) {
+                    if (this.ship.xVel < 0) {
+                        this.ship.xVel += DECELERATION_RATE;
+                    } else {
+                        this.ship.xVel += ACCELERATION_RATE;
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }    
     }
 
     handleMousedown(event) {
@@ -97,12 +145,12 @@ class Ship extends ScreenElement {
 
 function areElementsCollided(e1, e2) {
     // check x collision distance
+    let xCollisionRange = (e1.xPos < e2.xPos) ? e1.width : e2.width;
     let xDist = Math.abs(e1.xPos - e2.xPos);
-    let xCollisionRange = e1.width/2 + e2.width/2
     if (xDist < xCollisionRange) {
         // check y collision distance
+        let yCollisionRange = (e1.yPos < e2.yPos) ? e1.height : e2.height;
         let yDist = Math.abs(e1.yPos - e2.yPos);
-        let yCollisionRange = e1.height/2 + e2.height/2;
         if (yDist < yCollisionRange) {
             return true;
         }
