@@ -103,8 +103,9 @@ class Burst {
         }
     }
     addBubble() {
-        this.bubbles.push(
-            new Bubble(`${this.id}-${this.bubbles.length}`, this.xPos, this.yPos));
+        let newBubble = new Bubble(`${this.id}-${this.bubbles.length}`, this.xPos, this.yPos);
+        console.log(newBubble.id + ': ' + newBubble.color);
+        this.bubbles.push(newBubble);
     }
     removeBubble(i) {
         let bubble = this.bubbles.splice(i, 1)[0];
@@ -195,4 +196,7 @@ function areElementsCollided(e1, e2) {
 
 const posNeg = () => Math.random() < 0.5 ? -1 : 1;
 const randomVelocity = () => Math.random() * posNeg() / 2;
-const randomColor = () => Math.floor(Math.random()*16777215).toString(16);
+const randomColor = () => {
+    let rgbHex = Math.floor(Math.random()*15728640).toString(16);
+    return rgbHex.padStart(6, '0');
+}
