@@ -4,7 +4,7 @@ const SHIP_WIDTH = 30;
 const BUBBLE_DIAMETER = 8;
 const BUBBLES_PER_BURST = 50;
 
-const MAX_SPEED = 2.2;
+const MAX_SPEED = 3;
 const ACCELERATION_RATE = 2.2;
 const DECELERATION_RATE = 4;
 
@@ -30,6 +30,46 @@ class Game {
             });
         });
         this.ship.move();
+    }
+
+    handleKeydown(event) {
+        switch (event.key) {
+            case 'w': // w 
+                this.ship.upGas = true;
+                break;
+            case 'a': // a
+                this.ship.leftGas = true;
+                break;
+            case 's': // s
+                this.ship.downGas = true;
+                break
+            case 'd': // d
+                this.ship.rightGas = true;
+                break;
+            default:
+                break;        
+        }
+        this.ship.updateVelocity();
+    }
+    
+    handleKeyup(event) {
+        switch (event.key) {
+            case 'w': // w 
+            this.ship.upGas = false;
+            break;
+            case 'a': // a
+            this.ship.leftGas = false;
+            break;
+            case 's': // s
+            this.ship.downGas = false;
+            break
+            case 'd': // d
+            this.ship.rightGas = false;
+            break;
+            default:
+            break;        
+        }
+        this.ship.updateVelocity();
     }
 
     handleKeypress(event) {
@@ -140,6 +180,25 @@ class Bubble extends ScreenElement {
 class Ship extends ScreenElement {
     constructor(xPos, yPos) {
         super('ship1', SHIP_HEIGHT, SHIP_WIDTH, xPos, yPos, 0, 0, randomColor(), 'ship');
+        this.upGas = false,
+        this.downGas = false,
+        this.leftGas = false,
+        this.rightGas = false;
+    }
+    updateVelocity() {
+        // y velocity
+        if (this.upGas) {
+            this.yVel = (this.downGas) ? 0 : -MAX_SPEED;
+        } else {
+            this.yVel = (this.downGas) ? MAX_SPEED : 0;
+        }
+        // x velocity
+        if (this.rightGas) {
+            // right gas on
+            this.xVel = (this.leftGas) ? 0 : MAX_SPEED;
+        } else {
+            this.xVel = (this.leftGas) ? -MAX_SPEED : 0;
+        }
     }
 }
 

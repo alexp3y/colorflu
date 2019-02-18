@@ -38,8 +38,16 @@ class Engine {
                 engine.run();
             }
         } else {
-            if (engine.running) this.game.handleKeypress(event);
+            // if (engine.running) this.game.handleKeypress(event);
         } 
+    }
+
+    handleKeydown(event) {
+        this.game.handleKeydown(event);
+    }
+
+    handleKeyup(event) {
+        this.game.handleKeyup(event);
     }
 
     handleMousedown(event) {
