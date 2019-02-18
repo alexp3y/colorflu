@@ -14,10 +14,11 @@ class Engine {
                 this.game = new Game();
             }
             this.running = true;
-            
             this.gameLoopId = setInterval(() => {
-                this.game.update();
+                // game loop //
+                this.game.updateGame();
                 Graphics.renderGame(this.game);
+                ////
             }, this.refreshRate);
         }
     }

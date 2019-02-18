@@ -5,13 +5,27 @@ const BUBBLE_DIAMETER = 8;
 const BUBBLES_PER_BURST = 50;
 
 const MAX_SPEED = 3;
-const ACCELERATION_RATE = 2.2;
-const DECELERATION_RATE = 4;
 
 class Game {
     constructor() {
         this.ship = new Ship(200, 200),
         this.bursts = [];
+    }
+
+    updateGame() {
+        // update bursts
+        this.bursts.forEach((burst, i) => {
+            burst.bubbles.forEach((bubble, i) => {
+                if (areElementsCollided(this.ship, bubble)) {
+                    burst.removeBubble(i);
+                } else {
+                    bubble.move();
+                }
+            });
+            if (burst.bubbles.length == 0) this.removeBurst(i);
+        });
+        // update ship
+        this.ship.move();
     }
     
     addBurst(xPos, yPos) {
@@ -20,30 +34,26 @@ class Game {
         return burst;
     }
 
-    update() {
-        this.bursts.forEach(burst => {
-            burst.bubbles.forEach(bubble => {
-                if (areElementsCollided(this.ship, bubble)) {
-                    bubble.destroy();
-                }
-                bubble.move();
-            });
-        });
-        this.ship.move();
+    removeBurst(index) {
+        this.bursts.splice(index, 1);
     }
 
     handleKeydown(event) {
         switch (event.key) {
-            case 'w': // w 
+            case 'w':
+            case 'W':
                 this.ship.upGas = true;
                 break;
-            case 'a': // a
+            case 'a':
+            case 'A': 
                 this.ship.leftGas = true;
                 break;
-            case 's': // s
+            case 's':
+            case 'S':
                 this.ship.downGas = true;
                 break
-            case 'd': // d
+            case 'd':
+            case 'D':
                 this.ship.rightGas = true;
                 break;
             default:
@@ -51,72 +61,29 @@ class Game {
         }
         this.ship.updateVelocity();
     }
-    
+
     handleKeyup(event) {
         switch (event.key) {
-            case 'w': // w 
-            this.ship.upGas = false;
-            break;
-            case 'a': // a
-            this.ship.leftGas = false;
-            break;
-            case 's': // s
-            this.ship.downGas = false;
-            break
-            case 'd': // d
-            this.ship.rightGas = false;
-            break;
+            case 'w':
+            case 'W':
+                this.ship.upGas = false;
+                break;
+            case 'a':
+            case 'A': 
+                this.ship.leftGas = false;
+                break;
+            case 's':
+            case 'S':
+                this.ship.downGas = false;
+                break
+            case 'd':
+            case 'D':
+                this.ship.rightGas = false;
+                break;
             default:
             break;        
         }
         this.ship.updateVelocity();
-    }
-
-    handleKeypress(event) {
-        switch (event.which) {
-            case 119: // w 
-                if (this.ship.yVel > -MAX_SPEED) {
-                    if (this.ship.yVel > 0) {
-                        this.ship.yVel = (Math.abs(this.ship.yVel) < DECELERATION_RATE) ? 0 : this.ship.yVel - DECELERATION_RATE;
-                    } else {
-                        this.ship.yVel -= ACCELERATION_RATE;
-                    }
-                } 
-                break;
-
-            case 97: // a
-                if (this.ship.xVel > -MAX_SPEED) {
-                    if (this.ship.xVel > 0) {
-                        this.ship.xVel = (Math.abs(this.ship.xVel) < DECELERATION_RATE) ? 0 : this.ship.xVel - DECELERATION_RATE;
-                    } else {
-                        this.ship.xVel -= ACCELERATION_RATE;
-                    }
-                }
-                break;
-
-            case 115: // s
-                if (this.ship.yVel < MAX_SPEED) {
-                    if (this.ship.yVel < 0) {
-                        this.ship.yVel = (Math.abs(this.ship.yVel) < DECELERATION_RATE) ? 0 : this.ship.yVel + DECELERATION_RATE;
-                    } else {
-                        this.ship.yVel += ACCELERATION_RATE;
-                    }
-                }
-                break
-
-            case 100: // d
-                if (this.ship.xVel < MAX_SPEED) {
-                    if (this.ship.xVel < 0) {
-                        this.ship.xVel = (Math.abs(this.ship.xVel) < DECELERATION_RATE) ? 0 : this.ship.xVel + DECELERATION_RATE;
-                    } else {
-                        this.ship.xVel += ACCELERATION_RATE;
-                    }
-                }
-                break;
-
-            default:
-                break;
-        }    
     }
 
     handleMousedown(event) {
@@ -135,10 +102,13 @@ class Burst {
             this.addBubble();
         }
     }
-    
     addBubble() {
         this.bubbles.push(
             new Bubble(`${this.id}-${this.bubbles.length}`, this.xPos, this.yPos));
+    }
+    removeBubble(i) {
+        let bubble = this.bubbles.splice(i, 1)[0];
+        bubble.destroy();
     }
 
 }
@@ -157,12 +127,10 @@ class ScreenElement {
         
         Graphics.addElement(this, type)
     }
-    
     move() {
         this.xPos += this.xVel;
         this.yPos += this.yVel;
     }
-
     destroy() {
         Graphics.removeElement(this);
     }
@@ -185,6 +153,7 @@ class Ship extends ScreenElement {
         this.leftGas = false,
         this.rightGas = false;
     }
+
     updateVelocity() {
         // y velocity
         if (this.upGas) {
@@ -200,7 +169,12 @@ class Ship extends ScreenElement {
             this.xVel = (this.leftGas) ? -MAX_SPEED : 0;
         }
     }
+    
+    move() {
+        super.move();
+    }
 }
+
 
 function areElementsCollided(e1, e2) {
     // check x collision distance
