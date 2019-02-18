@@ -17,14 +17,14 @@ class Game {
         this.bursts.forEach((burst, i) => {
             burst.bubbles.forEach((bubble, i) => {
                 if (areElementsCollided(this.ship, bubble)) {
-                    burst.removeBubble(i);
+                    this.ship.eatBubble(burst.removeBubble(i));
                 } else {
                     bubble.move();
                 }
             });
             if (burst.bubbles.length == 0) this.removeBurst(i);
         });
-        // update ship
+        // move ship
         this.ship.move();
     }
     
@@ -109,6 +109,7 @@ class Burst {
     removeBubble(i) {
         let bubble = this.bubbles.splice(i, 1)[0];
         bubble.destroy();
+        return bubble;
     }
 
 }
@@ -170,8 +171,8 @@ class Ship extends ScreenElement {
         }
     }
     
-    move() {
-        super.move();
+    eatBubble(bubble) {
+        this.color = bubble.color;
     }
 }
 

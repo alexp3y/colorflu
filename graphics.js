@@ -1,9 +1,9 @@
 class Graphics {
     static renderGame(game) {
-        Graphics.placeElement(game.ship);
+        Graphics.updateElement(game.ship);
         game.bursts.forEach(burst => {
             burst.bubbles.forEach(bubble => {
-                Graphics.placeElement(bubble);
+                Graphics.updateElement(bubble);
             });
         });
     }
@@ -17,10 +17,11 @@ class Graphics {
         $('.container').append(div); 
     }
     
-    static placeElement(element) {
+    static updateElement(element) {
         let div = $(`#${element.id}`);
         div.css('left', `${element.xPos}px`);
         div.css('top', `${element.yPos}px`);
+        div.css('background-color', `#${element.color}`)  
     }
     
     static removeElement(element) {
