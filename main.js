@@ -1,13 +1,12 @@
 const engine = new Engine();
 
 $('document').ready(function() {
-    $(document).keypress(keypress);
+    // register event listeners
     $(document).keydown(keydown);
     $(document).keyup(keyup);
     $(document).mousedown(mousedown);
     // start game and run engine
-    engine.newGame($(document).width(), $(document).height())
-    engine.run();
+    engine.turnOn($(document).height(), $(document).width());
 })
 
 function keypress(event) {
