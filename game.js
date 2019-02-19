@@ -22,6 +22,7 @@ class Game {
                     this.ship.eatBubble(burst.removeBubble(i));
                     this.score++;
                 } else if (this.isBubbleOutOfBounds(bubble)) {
+                    this.score--;
                     burst.removeBubble(i);
                 } else {
                     bubble.move();
