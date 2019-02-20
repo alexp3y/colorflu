@@ -30,25 +30,29 @@ class Engine {
 
     handleKeydown(event) {
         switch (event.key) {
-            case '32':
+            case ' ':
                 this.game.paused = (this.game.paused) ? false : true;
                 event.preventDefault();
                 break;
+            case 'm':
+            case 'M':
+                this.game.board.bubbles.push(this.game.ship.spitBubble());
+                break;
             case 'w':
             case 'W':
-                this.game.ship.upGas = true;
+                this.game.ship.upGasOn = true;
                 break;
             case 'a':
             case 'A': 
-                this.game.ship.leftGas = true;
+                this.game.ship.leftGasOn = true;
                 break;
             case 's':
             case 'S':
-                this.game.ship.downGas = true;
+                this.game.ship.downGasOn = true;
                 break
             case 'd':
             case 'D':
-                this.game.ship.rightGas = true;
+                this.game.ship.rightGasOn = true;
                 break;
             default:
                 break;        
@@ -59,19 +63,19 @@ class Engine {
         switch (event.key) {
             case 'w':
             case 'W':
-                this.game.ship.upGas = false;
+                this.game.ship.upGasOn = false;
                 break;
             case 'a':
             case 'A': 
-                this.game.ship.leftGas = false;
+                this.game.ship.leftGasOn = false;
                 break;
             case 's':
             case 'S':
-                this.game.ship.downGas = false;
+                this.game.ship.downGasOn = false;
                 break
             case 'd':
             case 'D':
-                this.game.ship.rightGas = false;
+                this.game.ship.rightGasOn = false;
                 break;
             default:
             break;        
@@ -79,6 +83,6 @@ class Engine {
     }
 
     handleMousedown(event) {
-        this.game.board.addBubbleBurst(event.pageX, event.pageY);        
+        this.game.board.addBubbleBurst(event.pageX, event.pageY);   
     }    
 }

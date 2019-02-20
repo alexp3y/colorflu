@@ -29,21 +29,37 @@ class Graphics {
     }
     drawBoard(board) {
         board.bubbles.forEach(b => {
-            this.ctx.fillStyle = `#${b.color}`;
             this.ctx.beginPath();
             this.ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
-            this.ctx.stroke();            
+            if (b.color != 'black') {
+                this.ctx.fillStyle = b.color;
+                this.ctx.fill();
+            } else {
+                this.ctx.strokeStyle = b.color;
+                this.ctx.stroke();            
+            }
         });
     }
     drawShip(ship) {
-        this.ctx.fillStyle = `#${ship.color}`;
-        this.ctx.fillRect(ship.x,ship.y,ship.w,ship.h);
+        this.ctx.fillStyle = ship.color;
+        this.ctx.beginPath();
+        this.ctx.arc(ship.x, ship.y, ship.r, 0, 2 * Math.PI);
+        this.ctx.fill();
+        
+        let r = ship.r;
+        ship.bubbles.forEach(b => {
+            if (r > 0) {
+                this.ctx.beginPath();
+                this.ctx.arc(ship.x, ship.y, r, 0, 2 * Math.PI);
+                this.ctx.strokeStyle = b.color;
+                this.ctx.linewidth = 5;
+                this.ctx.stroke(); 
+                r++;
+            }
+        })
     }
     drawScore(score) {
-
     }
     drawPause(color) {
-        $('.pause').css('color', `#${color}`);
-        $('.pause').toggle();
     }
 }

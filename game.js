@@ -1,10 +1,11 @@
-const SHIP_HEIGHT = 50;
-const SHIP_WIDTH = 30;
-
-const BUBBLE_RADIUS = 8;
+const SHIP_RADIUS = 25;
+const SHIP_SPEED = 3;
+const BLACK_BUBBLE_RADIUS = 8;
+const COLOR_BUBBLE_RADIUS = 4;
 const BUBBLES_PER_BURST = 50;
 
-const SHIP_SPEED = 3;
+const palette = ['#f0582c',"#c2e57e","#5ce184","#3daae3","#5599de","#d63570","#d63570","#d63570"];
+
 
 class Game {
     constructor(height, width) {
@@ -15,11 +16,13 @@ class Game {
     }
     updateGame() {
         if (!this.paused) {
-            // update bubbles
+            // bubbles
             this.board.bubbles.forEach((bubble, i) => {
-                if (areElementsCollided(this.ship, bubble)) {
-                    this.ship.eatBubble(this.board.bubbles.splice(i,1));
-                    this.score++;
+                if (bubble.isCollidedWith(this.ship)) {
+                    if (bubble.color != 'black') {
+                        this.ship.eatBubble(this.board.bubbles.splice(i,1)[0]);
+                        this.score++;
+                    }
                 } else if (bubble.isOutOfBounds()) {
                     this.board.bubbles.splice(i,1);
                     this.score--;
@@ -27,9 +30,9 @@ class Game {
                     bubble.move();
                 }
             });
-            // update ship
+            // ship
             this.ship.updateVelocity();
-            this.ship.enforceBoundary();
+            this.ship.enforceBoundary(this.board.h, this.board.w);
             this.ship.move();
         }
     }
@@ -43,8 +46,16 @@ class Board {
         this.bubbles = []
     }
     addBubbleBurst(x, y) {
-        for (let i=0; i<BUBBLES_PER_BURST; i++) {
-            this.bubbles.push(new Bubble(x, y));
+        if (posNeg() > 0){
+            // black and white
+            for (let i=0; i<BUBBLES_PER_BURST; i++) {
+                this.bubbles.push(new Bubble(x, y, BLACK_BUBBLE_RADIUS, 'black'));
+            }
+        } else {
+            // color
+            for (let i=0; i<BUBBLES_PER_BURST; i++) {
+                this.bubbles.push(new Bubble(x, y, COLOR_BUBBLE_RADIUS/1., randomColor()));
+            }
         }
     }    
 }
@@ -65,10 +76,10 @@ class MovableElement {
     
 
 class Bubble extends MovableElement {
-    constructor(x, y) {
+    constructor(x, y, r, color) {
         super(x, y, randomVelocity(), randomVelocity());
-        this.r = BUBBLE_RADIUS;
-        this.color = randomColor();
+        this.r = r,
+        this.color = color;
     }
     isOutOfBounds(h,w) {
         return (this.x+this.r < 0 || this.x-this.r > w
@@ -76,70 +87,62 @@ class Bubble extends MovableElement {
         ? true 
         : false
     }
+    isCollidedWith(ship) {
+        return distance(this, ship) <= (this.r + ship.r);
+    }
 }
 
 
 class Ship extends MovableElement {
     constructor(x, y) {
         super(x, y, 0, 0);
-        this.h = SHIP_HEIGHT,
-        this.w = SHIP_WIDTH,
-        this.color = randomColor(),
-        this.upGas = false,
-        this.downGas = false,
-        this.leftGas = false,
-        this.rightGas = false;
+        this.r = SHIP_RADIUS,
+        this.color = 'black',
+        this.upGasOn = false,
+        this.downGasOn = false,
+        this.leftGasOn = false,
+        this.rightGasOn = false,
+        this.bubbles = [];
     }
     updateVelocity() {
-        // y velocity
-        if (this.upGas) {
-            this.yVel = (this.downGas) ? 0 : -SHIP_SPEED;
+        if (this.upGasOn) {
+            this.yVel = (this.downGasOn) ? 0 : -SHIP_SPEED;
         } else {
-            this.yVel = (this.downGas) ? SHIP_SPEED : 0;
+            this.yVel = (this.downGasOn) ? SHIP_SPEED : 0;
         }
-        // x velocity
-        if (this.rightGas) {
-            // right gas on
-            this.xVel = (this.leftGas) ? 0 : SHIP_SPEED;
+        if (this.rightGasOn) {
+            this.xVel = (this.leftGasOn) ? 0 : SHIP_SPEED;
         } else {
-            this.xVel = (this.leftGas) ? -SHIP_SPEED : 0;
+            this.xVel = (this.leftGasOn) ? -SHIP_SPEED : 0;
         }
-    }
-    eatBubble(bubble) {
-        this.color = bubble.color;
     }
     enforceBoundary(h,w) {
-        // left wall
-        if (this.x <= 0 && this.xVel < 0) this.xVel = 0; 
-        // right wall
-        if (this.x+this.width >= w && this.xVel > 0) this.xVel = 0;
-        // top wall
-        if (this.y <= 0 && this.yVel < 0) this.yVel = 0;
-        // bottom wall
-        if (this.y+this.height >= h && this.yVel > 0) this.yVel = 0;
+        if (this.x-this.r <= 0 && this.xVel < 0) this.xVel = 0; // left wall
+        if (this.x+this.r >= w && this.xVel > 0) this.xVel = 0; // right wall
+        if (this.y-this.r <= 0 && this.yVel < 0) this.yVel = 0; // top wall
+        if (this.y+this.r >= h && this.yVel > 0) this.yVel = 0; // bottom wall
     }    
-}
-
-
-function areElementsCollided(e1, e2) {
-    // check x collision distance
-    let xCollisionRange = (e1.x < e2.x) ? e1.width : e2.width;
-    let xDist = Math.abs(e1.x - e2.x);
-    if (xDist < xCollisionRange) {
-        // check y collision distance
-        let yCollisionRange = (e1.yPos < e2.yPos) ? e1.height : e2.height;
-        let yDist = Math.abs(e1.yPos - e2.yPos);
-        if (yDist < yCollisionRange) {
-            return true;
+    spitBubble() {
+        let ejected = this.bubbles.pop();
+        if (ejected) {
+            ejected.y = this.y;
+            ejected.x = this.x + this.r + ejected.r + 1;
+            ejected.xVel = SHIP_SPEED;
         }
+        return ejected;
     }
-    return false;
+    eatBubble(bubble) {
+        this.bubbles.push(bubble);
+    }
 }
 
 
 const posNeg = () => Math.random() < 0.5 ? -1 : 1;
 const randomVelocity = () => Math.random() * posNeg() / 2;
-const randomColor = () => {
-    let rgbHex = Math.floor(Math.random()*15728640).toString(16);
-    return rgbHex.padStart(6, '0');
+const randomColor = () => palette[Math.floor(Math.random() * palette.length)];
+const distance = (p, q) => { 
+    var dx   = p.x - q.x;         
+    var dy   = p.y - q.y;         
+    var dist = Math.sqrt( dx*dx + dy*dy ); 
+    return dist;
 }
