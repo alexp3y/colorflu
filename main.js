@@ -24,3 +24,8 @@ function keyup(event) {
 function mousedown(event) {
     engine.handleMousedown(event);
 }
+
+function render() {
+    engine.graphics.renderGame();
+    window.requestAnimationFrame(render);
+}

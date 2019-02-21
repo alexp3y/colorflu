@@ -4,9 +4,12 @@ const COLOR_BUBBLE_RADIUS = 5;
 
 const SHIP_VELOCITY = 3;
 const BULLET_VELOCITY = 4;
+const SCROLL_ADJUST_VELOCITY = 2;
 
 const SHIP_TRIGGER_DELAY = 3;
 const BUBBLES_PER_BURST = 50;
+
+const SCROLL_DELAY = 6;
 
 const palette = ['#f0582c',"#c2e57e","#5ce184","#3daae3","#5599de","#d63570","#d63570","#d63570"];
 
@@ -14,7 +17,7 @@ const palette = ['#f0582c',"#c2e57e","#5ce184","#3daae3","#5599de","#d63570","#d
 class Game {
     constructor(height, width) {
         this.board = new Board(height, width);
-        this.ship = new Ship(200, 200),
+        this.ship = new Ship(this.board.wallStart+SHIP_RADIUS, height/2 ),
         this.paused = false,
         this.loopCounter = 0,
         this.score = 0;
@@ -24,6 +27,27 @@ class Game {
         if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
         
         if (!this.paused) {
+            // background scrolling
+            let scrollAdjust = 0;
+            if (this.ship.x+this.ship.r >= this.board.wallEnd 
+                && this.ship.rightGasOn
+                && this.board.gradientEnd >= 0) {
+                if (this.isDelayReady(SCROLL_DELAY)) {
+                    this.board.gradientStart--;
+                    this.board.gradientEnd--;
+                }
+                scrollAdjust = -SCROLL_ADJUST_VELOCITY;
+            }
+            if (this.ship.x-this.ship.r <= this.board.wallStart 
+                && this.ship.leftGasOn 
+                && this.board.gradientStart <= 255) {
+                if (this.isDelayReady(SCROLL_DELAY)) {
+                    this.board.gradientStart++;
+                    this.board.gradientEnd++;
+                }
+                scrollAdjust = SCROLL_ADJUST_VELOCITY;
+            } 
+
             // bubbles
             this.board.bubbles.forEach((bubble, i) => {
                 if (bubble.color != 'black') {
@@ -44,7 +68,7 @@ class Game {
                     this.board.bubbles.splice(i,1);
                     this.score--;
                 } else {
-                    bubble.move();
+                    bubble.move(scrollAdjust);
                 }
             });
             // bullets
@@ -52,10 +76,10 @@ class Game {
             if (this.isDelayReady(SHIP_TRIGGER_DELAY)) {
                 this.board.addBullets(this.ship.spitBubbles());
             }
-                // ship
-            this.ship.updateVelocity();
-            this.ship.enforceBoundary(this.board.h, this.board.w);
-            this.ship.move();
+            // ship
+            this.ship.applyGas();
+            this.ship.enforceBoundary(this.board.wallStart,this.board.wallEnd,0,this.board.h);
+            this.ship.move(0);
         }
     }
     isDelayReady(delay) {
@@ -69,7 +93,11 @@ class Board {
         this.h = h,
         this.w = w,
         this.bubbles = [],
-        this.bullets = [];
+        this.bullets = [],
+        this.wallStart = this.w/6,
+        this.wallEnd = this.w*4/6,
+        this.gradientStart = 255,
+        this.gradientEnd = 125;        
     }
     addBubbleBurst(x, y) {
         if (posNeg() > 0){
@@ -97,8 +125,8 @@ class MovableElement {
         this.xVel = xVel,
         this.yVel = yVel;
     }
-    move() {
-        this.x += this.xVel;
+    move(scrollAdjust) {
+        this.x += this.xVel+scrollAdjust;
         this.y += this.yVel;
     }
 }
@@ -138,7 +166,7 @@ class Ship extends MovableElement {
         this.rightGasOn = false,
         this.bubbles = [];
     }
-    updateVelocity() {
+    applyGas() {
         if (this.upGasOn) {
             this.yVel = (this.downGasOn) ? 0 : -SHIP_VELOCITY;
         } else {
@@ -150,11 +178,11 @@ class Ship extends MovableElement {
             this.xVel = (this.leftGasOn) ? -SHIP_VELOCITY : 0;
         }
     }
-    enforceBoundary(h,w) {
-        if (this.x-this.r <= 0 && this.xVel < 0) this.xVel = 0; // left wall
-        if (this.x+this.r >= w && this.xVel > 0) this.xVel = 0; // right wall
-        if (this.y-this.r <= 0 && this.yVel < 0) this.yVel = 0; // top wall
-        if (this.y+this.r >= h && this.yVel > 0) this.yVel = 0; // bottom wall
+    enforceBoundary(xStart,xEnd,yStart,yEnd) {
+        if (this.x-this.r <= xStart && this.xVel < 0) this.xVel = 0; // left wall
+        if (this.x+this.r >= xEnd && this.xVel > 0) this.xVel = 0; // right wall
+        if (this.y-this.r <= yStart && this.yVel < 0) this.yVel = 0; // top wall
+        if (this.y+this.r >= yEnd && this.yVel > 0) this.yVel = 0; // bottom wall
     }    
     eatBubble(bubble) {
         bubble.r = COLOR_BUBBLE_RADIUS;

@@ -3,6 +3,7 @@ const REFRESH_RATE = 20; //ms
 class Engine {
     constructor() {
         this.game = null,
+        this.graphics = null,
         this.intervalId = null,
         this.on = false;
     }
@@ -13,12 +14,10 @@ class Engine {
             this.game = new Game(height, width);
             this.graphics = new Graphics(height, width, this.game);
             this.gameLoopId = setInterval(() => {
-                // game loop //
                 this.game.updateGame();
-                this.graphics.renderGame();
-                ////
             }, REFRESH_RATE);
         }
+        window.requestAnimationFrame(render);
     }
 
     turnOff() {

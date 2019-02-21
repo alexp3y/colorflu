@@ -12,22 +12,22 @@ class Graphics {
         return canvas.getContext('2d');
     }
     renderGame() {
-        if (!this.game.paused) {
-            this.clearCanvas();
-            this.drawBoard(this.game.board);
-            this.drawShip(this.game.ship);
-            this.drawScore(this.game.score);
-        } else {
+        this.ctx.clearRect(0,0,this.w,this.h);
+        this.drawBoard(this.game.board);
+        this.drawShip(this.game.ship);
+        this.drawScore(this.game.score);
+        if (this.game.paused) {
             this.drawPause();
             // other pause actions/animations
-            //...
         }
     }
-    clearCanvas() {
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillRect(0,0,this.w,this.h);
-    }
     drawBoard(board) {
+        let gradient = this.ctx.createLinearGradient(0, 0, board.w, 0);
+        gradient.addColorStop(0, `rgb(${board.gradientStart}, ${board.gradientStart}, ${board.gradientStart})`);
+        gradient.addColorStop(1, `rgb(${board.gradientEnd}, ${board.gradientEnd}, ${board.gradientEnd})`);
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, board.w, board.h);
+
         board.bubbles.forEach(b => {
             this.ctx.beginPath();
             this.ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
@@ -45,9 +45,6 @@ class Graphics {
             this.ctx.fillStyle = b.color;
             this.ctx.fill();
         })
-    }
-    drawBubbleStack(bubbles) {
-        
     }
     drawShip(ship) {
         this.ctx.fillStyle = ship.color;
@@ -70,5 +67,9 @@ class Graphics {
     drawScore(score) {
     }
     drawPause(color) {
+        this.ctx.font = `${this.h/5}px none`;
+        this.ctx.textAlign = "center";
+        this.ctx.fillStyle = '';
+        this.ctx.fillText("PAUSED", this.w/2, this.h/2);        
     }
 }
