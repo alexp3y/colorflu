@@ -1,8 +1,11 @@
 const SHIP_RADIUS = 25;
-const SHIP_SPEED = 3;
-const SHIP_FIRE_DELAY = 2;
 const BLACK_BUBBLE_RADIUS = 8;
-const COLOR_BUBBLE_RADIUS = 5   ;
+const COLOR_BUBBLE_RADIUS = 5;
+
+const SHIP_VELOCITY = 3;
+const BULLET_VELOCITY = 4;
+
+const SHIP_TRIGGER_DELAY = 3;
 const BUBBLES_PER_BURST = 50;
 
 const palette = ['#f0582c',"#c2e57e","#5ce184","#3daae3","#5599de","#d63570","#d63570","#d63570"];
@@ -12,11 +15,14 @@ class Game {
     constructor(height, width) {
         this.board = new Board(height, width);
         this.ship = new Ship(200, 200),
-        this.paused = false;
-        this.score = 0,
-        this.shipFireCounter = SHIP_FIRE_DELAY;
+        this.paused = false,
+        this.loopCounter = 0,
+        this.score = 0;
     }
     updateGame() {
+        this.loopCounter++;
+        if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
+        
         if (!this.paused) {
             // bubbles
             this.board.bubbles.forEach((bubble, i) => {
@@ -43,20 +49,17 @@ class Game {
             });
             // bullets
             this.board.bullets.forEach(b => b.move());
-            // ship
-            if (this.ship.triggerOn) {
-                if (this.shipFireCounter == SHIP_FIRE_DELAY) {
-                    let spitBubble = this.ship.spitBubble();
-                    if (spitBubble) this.board.bullets.push(spitBubble);
-                    this.shipFireCounter = 0;
-                } else {
-                    this.shipFireCounter++;
-                }
+            if (this.isDelayReady(SHIP_TRIGGER_DELAY)) {
+                this.board.addBullets(this.ship.spitBubbles());
             }
+                // ship
             this.ship.updateVelocity();
             this.ship.enforceBoundary(this.board.h, this.board.w);
             this.ship.move();
         }
+    }
+    isDelayReady(delay) {
+        return this.loopCounter%delay == 0;
     }
 }
 
@@ -80,7 +83,10 @@ class Board {
                 this.bubbles.push(new Bubble(x, y, COLOR_BUBBLE_RADIUS/1., randomColor()));
             }
         }
-    }    
+    }
+    addBullets(bullets) {
+        bullets.forEach(b => this.bullets.push(b));
+    }
 }
 
 
@@ -122,7 +128,10 @@ class Ship extends MovableElement {
         super(x, y, 0, 0);
         this.r = SHIP_RADIUS,
         this.color = 'black',
-        this.triggerOn = false,
+        this.upTriggerOn = false,
+        this.downTriggerOn = false,
+        this.leftTriggerOn = false,
+        this.rightTriggerOn = false,
         this.upGasOn = false,
         this.downGasOn = false,
         this.leftGasOn = false,
@@ -131,14 +140,14 @@ class Ship extends MovableElement {
     }
     updateVelocity() {
         if (this.upGasOn) {
-            this.yVel = (this.downGasOn) ? 0 : -SHIP_SPEED;
+            this.yVel = (this.downGasOn) ? 0 : -SHIP_VELOCITY;
         } else {
-            this.yVel = (this.downGasOn) ? SHIP_SPEED : 0;
+            this.yVel = (this.downGasOn) ? SHIP_VELOCITY : 0;
         }
         if (this.rightGasOn) {
-            this.xVel = (this.leftGasOn) ? 0 : SHIP_SPEED;
+            this.xVel = (this.leftGasOn) ? 0 : SHIP_VELOCITY;
         } else {
-            this.xVel = (this.leftGasOn) ? -SHIP_SPEED : 0;
+            this.xVel = (this.leftGasOn) ? -SHIP_VELOCITY : 0;
         }
     }
     enforceBoundary(h,w) {
@@ -147,19 +156,38 @@ class Ship extends MovableElement {
         if (this.y-this.r <= 0 && this.yVel < 0) this.yVel = 0; // top wall
         if (this.y+this.r >= h && this.yVel > 0) this.yVel = 0; // bottom wall
     }    
-    spitBubble() {
-        if (this.bubbles.length > 0) {
-            let ejected = this.bubbles.pop();
-            ejected.bullet = true;
-            ejected.y = this.y;
-            ejected.x = this.x + this.r + ejected.r + 1;
-            ejected.xVel = SHIP_SPEED + .5;
-            return ejected;
-        }
-    }
     eatBubble(bubble) {
         bubble.r = COLOR_BUBBLE_RADIUS;
         this.bubbles.push(bubble);
+    }
+    spitBubbles() {
+        let spitBubbles = [];
+        if (this.bubbles.length > 0 && this.upTriggerOn) {
+            let spitUp = this.bubbles.pop();
+            spitUp.yVel = -BULLET_VELOCITY;
+            spitBubbles.push(spitUp);
+        }
+        if (this.bubbles.length > 0 && this.downTriggerOn) {
+            let spitDown = this.bubbles.pop();
+            spitDown.yVel = BULLET_VELOCITY;
+            spitBubbles.push(spitDown);
+        }
+        if (this.bubbles.length > 0 && this.leftTriggerOn) {
+            let spitLeft = this.bubbles.pop();
+            spitLeft.xVel = -BULLET_VELOCITY;
+            spitBubbles.push(spitLeft);
+        }
+        if (this.bubbles.length > 0 && this.rightTriggerOn) {
+            let spitRight = this.bubbles.pop();
+            spitRight.xVel = BULLET_VELOCITY;
+            spitBubbles.push(spitRight);
+        }
+        spitBubbles.forEach(s => {
+            s.bullet = true;
+            s.x = this.x;
+            s.y = this.y;
+        });
+        return spitBubbles;
     }
 }
 
