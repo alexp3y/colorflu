@@ -27,16 +27,17 @@ class Engine {
             clearInterval(this.intervalId);
         }
     }
-
+    
     handleKeydown(event) {
         switch (event.key) {
             case ' ':
-                this.game.paused = (this.game.paused) ? false : true;
-                event.preventDefault();
-                break;
+            this.game.paused = (this.game.paused) ? false : true;
+            event.preventDefault();
+            break;
             case 'm':
             case 'M':
-                this.game.board.bubbles.push(this.game.ship.spitBubble());
+                this.game.shipFireCounter = SHIP_FIRE_DELAY;
+                this.game.ship.triggerOn = true;
                 break;
             case 'w':
             case 'W':
@@ -61,6 +62,10 @@ class Engine {
 
     handleKeyup(event) {
         switch (event.key) {
+            case 'm':
+            case 'M':
+                this.game.ship.triggerOn = false;
+                break;            
             case 'w':
             case 'W':
                 this.game.ship.upGasOn = false;

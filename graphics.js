@@ -39,6 +39,15 @@ class Graphics {
                 this.ctx.stroke();            
             }
         });
+        board.bullets.forEach(b => {
+            this.ctx.beginPath();
+            this.ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
+            this.ctx.fillStyle = b.color;
+            this.ctx.fill();
+        })
+    }
+    drawBubbleStack(bubbles) {
+        
     }
     drawShip(ship) {
         this.ctx.fillStyle = ship.color;
