@@ -42,23 +42,24 @@ class Graphics {
             default:
                 break;
         }
-        board.bubbles.forEach(b => {
+        board.enemyBursts.forEach(burst => burst.bubbles.forEach(enemy => {
             this.ctx.beginPath();
-            this.ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
-            if (b.color != 'black') {
-                this.ctx.fillStyle = b.color;
-                this.ctx.fill();
-            } else {
-                this.ctx.strokeStyle = b.color;
-                this.ctx.stroke();            
-            }
-        });
-        board.bullets.forEach(b => {
+            this.ctx.arc(enemy.x, enemy.y, enemy.r, 0, 2 * Math.PI);
+            this.ctx.strokeStyle = palette[enemy.color].hex;
+            this.ctx.stroke();            
+        }));
+        board.ammoBursts.forEach(burst => burst.bubbles.forEach(ammo => {
             this.ctx.beginPath();
-            this.ctx.arc(b.x, b.y, b.r, 0, 2 * Math.PI);
-            this.ctx.fillStyle = b.color;
+            this.ctx.arc(ammo.x, ammo.y, ammo.r, 0, 2 * Math.PI);
+            this.ctx.fillStyle = palette[ammo.color].hex;
             this.ctx.fill();
-        })
+        }));
+        board.bullets.forEach(bullet => {
+            this.ctx.beginPath();
+            this.ctx.arc(bullet.x, bullet.y, bullet.r, 0, 2 * Math.PI);
+            this.ctx.fillStyle = palette[bullet.color].hex;
+            this.ctx.fill();
+        });
     }
     drawShip(ship) {
         this.paint();
@@ -68,11 +69,11 @@ class Graphics {
         // this.ctx.fill();
         
         // let r = ship.r;
-        // ship.bubbles.forEach(b => {
+        // ship.bubbles.forEach(ammo => {
         //     if (r > 0) {
         //         this.ctx.beginPath();
         //         this.ctx.arc(ship.x, ship.y, r, 0, 2 * Math.PI);
-        //         this.ctx.strokeStyle = b.color;
+        //         this.ctx.strokeStyle = ammo.color;
         //         this.ctx.linewidth = 5;
         //         this.ctx.stroke(); 
         //         r++;

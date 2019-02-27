@@ -102,6 +102,10 @@ class Engine {
     }
 
     handleMousedown(event) {
-        this.game.board.addBubbleBurst(event.pageX, event.pageY);   
+        if (posNeg() > 0) {
+            this.game.board.addEnemyBurst(event.pageX, event.pageY);   
+        } else {
+            this.game.board.addAmmoBurst(event.pageX, event.pageY);   
+        }
     }    
 }
