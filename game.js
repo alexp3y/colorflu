@@ -1,73 +1,16 @@
-const palette = {
-    black: {
-        hex: '#ffffff',
-        powerLvl: 0 
-    },
-    red: {
-        name: 'red',
-        hex: '#e22b2b',
-        powerLvl: 1 
-    },
-    pink: { 
-        name: 'pink',
-        hex: '#f28cb8',
-        powerLvl: 2
-    },
-    darkBlue: {
-        name: 'darkBlue',
-        color: '#254b8a',
-        powerLvl: 3
-    },
-    orange: {
-        name: 'orange',
-        hex: '#fca420',
-        powerLvl: 4
-    },
-    yellow: {
-        name: 'yellow',
-        hex: '#fde02a',
-        powerLvl: 5
-    },
-    lightPurple: {
-        name: 'lightPurple',
-        hex: '#e3dff7',
-        powerLvl: 6
-    },
-    purple: {
-        name: 'purple', 
-        hex: '#390f59',
-        powerLvl: 7
-    },
-    blue: {
-        name: 'blue', 
-        hex: '#1627cf',
-        powerLvl: 8
-    },
-    green: {
-        name: 'green',
-        hex: '#53a678',
-        powerLvl: 9
-    },
-    maroon: {
-        name: 'maroon',
-        hex: '#ac2a62',
-        powerLvl: 10
-    }
-}
-
 // Radii
 const SHIP_RADIUS = 35;
 const ENEMY_RADIUS = 8;
 const AMMO_RADIUS = 5;
 const BULLET_RADIUS = 2;
-const ENEMY_BURST_RADIUS = 200;
-const AMMO_BURST_RADIUS = 100;
-
+const ENEMY_BURST_MAX_RADIUS = 100;
+const AMMO_BURST_MAX_RADIUS = 100;
 const BUBBLES_PER_BURST = 50;
 
 // Velocities
 const SHIP_VELOCITY = 3;
-const BULLET_VELOCITY = 4;
+const BULLET_VELOCITY = 6;
+const BULLET_VELOCITY_DIAG = Math.sqrt(Math.pow(BULLET_VELOCITY, 2)/2);
 const SCROLL_ADJUST_VELOCITY = 2;
 
 const GRADIENT_OFFSET = 100;
@@ -80,81 +23,101 @@ const SCROLL_DELAY = 6;
 class Game {
     constructor(height, width) {
         this.board = new Board(height, width);
-        this.ship = new Ship(this.board.leftScrollWall+SHIP_RADIUS, height/2 ),
+        this.ship = new Ship(width/3, height/2 ),
         this.paused = false,
+        this.level = 1,
+        this.levelProgress = 0,
         this.loopCounter = 0;
+        // add first enemy bursts
+        this.board.addEnemyBurst(width * 5/6, height/6)
+        this.board.addEnemyBurst(width * 5/6, height/2)
+        this.board.addEnemyBurst(width * 5/6, height * 5/6)
     }
     updateGame() {
         this.incrementLoopCounter();
-
         if (!this.paused) {
             // scrolling
-            let scrollAdjust = 0, scrollBlock = false;
-            if (this.ship.x+this.ship.r >= this.board.rightScrollWall && this.ship.rightGasOn) {
-                if (this.isDelayReady(SCROLL_DELAY)) {
-                    this.board.increaseGradient();
-                }
-                scrollAdjust = -SCROLL_ADJUST_VELOCITY;
-            } else if (this.ship.x-this.ship.r <= this.board.leftScrollWall && this.ship.leftGasOn) {
-                if (this.isDelayReady(SCROLL_DELAY)) {
-                    this.board.decreaseGradient();
-                }
-                scrollAdjust = SCROLL_ADJUST_VELOCITY;
-            } 
-
-            // enemy bursts
-            this.board.enemyBursts.forEach((burst, i) => {
-                burst.bubbles.forEach((enemy, j) => {
-                    if (enemy.isCollidedWith(this.ship)) { // check ship colission
-                        // ship die...
-                        // this.board.enemyBursts[i].bubbles.splice(j,1);
-                    } else if (this.board.isElementOutOfBounds(enemy)) { // boundary check
-                        this.board.enemyBursts[i].bubbles.splice(j,1);
-                    } else {
-                        this.board.bullets.forEach((bullet, k) => {  // check bullet colissions
-                            if (enemy.isCollidedWith(bullet)) {
-                                // enemy die...
-                                this.board.enemyBursts[i].bubbles.splice(j,1);
-                                this.board.bullets.splice(k,1);
-                            }
-                        });
-                    }
-                });
-                if (burst.bubbles.length == 0) this.board.enemyBursts.splice(i,1);
-                else if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
-            });
-            
-            // ammo bursts
-            this.board.ammoBursts.forEach((burst, i) => {
-                burst.bubbles.forEach((ammo, j) => {
-                    if (ammo.isCollidedWith(this.ship)) {
-                        this.ship.pickupAmmo(this.board.ammoBursts[i].bubbles.splice(j,1)[0]);
-                    } else if (this.board.isElementOutOfBounds(ammo)) {
-                        this.board.ammoBursts[i].bubbles.splice(j,1);
-                    }
-                });
-                if (burst.bubbles.length == 0) this.board.ammoBursts.splice(i,1);
-            });
-
-            // adjust ship
-            this.ship.applyGas();
-            this.board.enforceShipBoundary(this.ship);
-            if (this.isDelayReady(SHIP_TRIGGER_DELAY) && this.ship.isShooting()) {
-                this.board.bullets.push(this.ship.shootBullet());
-            }
-            
-            // move all elements with their current vel (plus any detected scroll adjustment)
-            this.moveGameElements(scrollAdjust);
+            this.updateScrolling();
+            // update board elements
+            this.updateEnemyBursts();
+            this.updateAmmoBursts();
+            this.updateBullets();
+            this.updateShip();
+            // move all elements
+            this.moveGameElements();
         }
+    }
+    updateScrolling() {
+        this.board.rightScrollActive = (this.ship.x+this.ship.r >= this.board.w/2 && this.ship.rightGasOn) 
+            ? true : false;
+        this.board.leftScrollActive = (this.levelProgress > 0 && this.ship.leftGasOn)
+            ? true : false;
+
+        if (this.isDelayReady(SCROLL_DELAY)) {
+            if (this.board.rightScrollActive) this.levelProgress++;
+            else if (this.board.leftScrollActive) this.levelProgress--;
+        }
+    }
+    updateEnemyBursts() {
+        this.board.enemyBursts.forEach((burst, i) => {
+            burst.bubbles.forEach((enemy, j) => {
+                if (enemy.isCollidedWith(this.ship)) { // check ship colission
+                    // ship die...
+                    // this.board.enemyBursts[i].bubbles.splice(j,1);
+                } else if (this.board.isBubbleOutOfBounds(enemy)) { // boundary check
+                    this.board.enemyBursts[i].bubbles.splice(j,1);
+                } else {
+                    this.board.bullets.forEach((bullet, k) => {  // check bullet colissions
+                        if (enemy.isCollidedWith(bullet)) {
+                            // enemy die...
+                            this.board.enemyBursts[i].bubbles.splice(j,1);
+                            this.board.bullets.splice(k,1);
+                        }
+                    });
+                }
+            });
+            if (burst.bubbles.length == 0) this.board.enemyBursts.splice(i,1);
+            else if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
+        });        
+    }
+    updateAmmoBursts() {
+        this.board.ammoBursts.forEach((burst, i) => {
+            burst.bubbles.forEach((ammo, j) => {
+                if (ammo.isCollidedWith(this.ship)) {
+                    this.ship.pickupAmmo(this.board.ammoBursts[i].bubbles.splice(j,1)[0]);
+                } else if (this.board.isBubbleOutOfBounds(ammo)) {
+                    this.board.ammoBursts[i].bubbles.splice(j,1);
+                }
+            });
+            if (burst.bubbles.length == 0) this.board.ammoBursts.splice(i,1);
+            else if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
+        });        
+    }
+    updateBullets() {
+        this.board.bullets.forEach((bullet, i) => {
+            if (this.board.isBubbleOutOfBounds(bullet)) this.board.bullets.splice(i,1);
+        });        
+    }
+    updateShip() {
+        this.ship.applyGas();
+        if (this.board.leftScrollActive || this.board.rightScrollActive) this.ship.xVel = 0;
+        this.board.enforceShipBoundary(this.ship);
+        if (this.isDelayReady(SHIP_TRIGGER_DELAY) && this.ship.isShooting()) {
+            this.board.bullets.push(this.ship.shootBullet());
+        }        
     }
     incrementLoopCounter() {
         this.loopCounter++;
-        if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
+        // if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
     }
     isDelayReady(delay) {
         return this.loopCounter%delay == 0;
     }
-    moveGameElements(scrollAdjust) {
+    moveGameElements() {
+        let scrollAdjust = 0;
+        if (this.board.leftScrollActive) scrollAdjust += SCROLL_ADJUST_VELOCITY;
+        else if (this.board.rightScrollActive) scrollAdjust -= SCROLL_ADJUST_VELOCITY;
+
         this.board.enemyBursts.forEach(burst => burst.bubbles.forEach(b => b.move(scrollAdjust)));
         this.board.ammoBursts.forEach(burst => burst.bubbles.forEach(b => b.move(scrollAdjust)));
         this.board.bullets.forEach(b => b.move(scrollAdjust));
@@ -170,39 +133,31 @@ class Board {
         this.bullets = [],
         this.h = h,
         this.w = w,
-        this.leftBoundary = -this.w/2,
-        this.rightBoundary = this.w*1.5,
-        this.topBoundary = -this.h/2,
-        this.bottomBoundary = this.h*1.5,
-        this.leftScrollActive = false,
-        this.rightScrollActive = true,
-        this.leftScrollWall = this.w/3,
-        this.rightScrollWall = this.w*3/5,
-        this.leftShade = 255,
-        this.rightShade = 255 - GRADIENT_OFFSET,
-        this.foregroundShade = 0;
+        this.leftScrollActive = true,
+        this.rightScrollActive = true;
     }
-    isElementOutOfBounds(el) {
-        return (el.x < this.leftBoundary) || (el.x > this.rightBoundary) ||
-                (el.y < this.topBoundary) || (el.y > this.bottomBoundary) ? true : false;
+    isBubbleOutOfBounds(bubble) {
+        return (bubble.x < -this.w / 2) || // left
+            (bubble.x > this.w * 1.5) ||   // right
+            (bubble.y < - this.h / 2) ||     // top
+            (bubble.y > this.h * 1.5)     // bottom
+            ? true : false;
     }
     enforceShipBoundary(ship) {
-        let leftBound = (this.leftScrollActive) ? this.leftScrollWall : 0;
-        let rightBound = (this.rightScrollActive) ? this.rightScrollWall : this.w;
-        if (ship.x-ship.r <= leftBound) ship.xVel = 0;
-        if (ship.x+ship.r >= rightBound) ship.xVel = 0; 
+        if (ship.x-ship.r <= 0) ship.xVel = 0;
+        if (ship.x+ship.r >= this.w) ship.xVel = 0; 
         if (ship.y-ship.r <= 0) ship.yVel = 0;
         if (ship.y+ship.r >= this.h) ship.yVel = 0;
     }
     addAmmoBurst(x, y) {
-        let ammoBurst = new Burst(x, y, AMMO_BURST_RADIUS);
+        let ammoBurst = new Burst(x, y, 0, AMMO_BURST_MAX_RADIUS);
         for (let i=0; i<BUBBLES_PER_BURST; i++) {
             ammoBurst.bubbles.push(new Ammo(x, y));
         }
         this.ammoBursts.push(ammoBurst);
     }
     addEnemyBurst(x, y) {
-        let enemyBurst = new Burst(x, y, ENEMY_BURST_RADIUS);
+        let enemyBurst = new Burst(x, y, 0, ENEMY_BURST_MAX_RADIUS);
         for (let i=0; i<BUBBLES_PER_BURST; i++) {
             enemyBurst.bubbles.push(new Enemy(x, y));
         }
@@ -224,10 +179,11 @@ class Board {
 
 
 class Burst {
-    constructor(x, y, r, maxRadius) {
+    constructor(x, y, minRadius, maxRadius) {
         this.x = x,
         this.y = y,
-        this.r = r,
+        this.r = 0,
+        this.minRadius = minRadius,
         this.maxRadius = maxRadius,
         this.bubbles = []
     }
@@ -330,27 +286,36 @@ class Ship extends MovableElement {
                 (this.downTriggerOn && !this.upTriggerOn)) ? true : false; 
     }
     shootBullet() {
-        // select the highest power ammo available
+        // select the highest power ammo color available
         let selected = 'red';
         Object.keys(this.ammo).forEach(a => { 
             if (this.ammo[a] > 0 && palette[a].powerLvl > palette[selected].powerLvl) {
                 selected = a;
             }
         });
-        let bullet = new Bullet(this.x, this.y, palette[selected].powerLvl, selected);
+        let bullet = new Bullet(this.x, this.y, BULLET_RADIUS, selected);
         this.ammo[selected]--;
-        if (this.upTriggerOn) {
-            bullet.yVel -= BULLET_VELOCITY;
+
+        let xBoost = 0, 
+            yBoost = 0;
+        if (this.upTriggerOn)  {
+            yBoost -= BULLET_VELOCITY;
         }
         if (this.downTriggerOn) {
-            bullet.yVel += BULLET_VELOCITY;
+            yBoost += BULLET_VELOCITY;
         }
         if (this.leftTriggerOn) {
-            bullet.xVel -= BULLET_VELOCITY;
+            xBoost -= BULLET_VELOCITY;
         }
         if (this.rightTriggerOn) {
-            bullet.xVel += BULLET_VELOCITY;
+            xBoost += BULLET_VELOCITY;
         }
+        if ((yBoost != 0) && (xBoost !=0)) {
+            yBoost = (yBoost < 0) ? -BULLET_VELOCITY_DIAG : BULLET_VELOCITY_DIAG;
+            xBoost = (xBoost < 0) ? -BULLET_VELOCITY_DIAG : BULLET_VELOCITY_DIAG;
+        } 
+        bullet.xVel += xBoost;
+        bullet.yVel += yBoost;
         return bullet;
     }
 }

@@ -6,7 +6,7 @@ $('document').ready(function() {
     $(document).keyup(keyup);
     $(document).mousedown(mousedown);
     // start game and run engine
-    engine.turnOn($(document).height(), $(document).width());
+    engine.turnOn($(window).height(), $(window).width());
 })
 
 function keypress(event) {

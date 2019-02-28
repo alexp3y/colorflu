@@ -1,4 +1,50 @@
 const REFRESH_RATE = 20; //ms
+const palette = {
+    black: {
+        hex: '#000000',
+        powerLvl: 0 
+    },
+    red: {
+        hex: '#e22b2b',
+        powerLvl: 1 
+    },
+    pink: { 
+        hex: '#f28cb8',
+        powerLvl: 2
+    },
+    darkBlue: {
+        hex: '#254b8a',
+        powerLvl: 3
+    },
+    orange: {
+        hex: '#fca420',
+        powerLvl: 4
+    },
+    yellow: {
+        hex: '#fde02a',
+        powerLvl: 5
+    },
+    lightPurple: {
+        hex: '#e3dff7',
+        powerLvl: 6
+    },
+    purple: {
+        hex: '#390f59',
+        powerLvl: 7
+    },
+    blue: {
+        hex: '#1627cf',
+        powerLvl: 8
+    },
+    green: {
+        hex: '#53a678',
+        powerLvl: 9
+    },
+    maroon: {
+        hex: '#ac2a62',
+        powerLvl: 10
+    }
+}
 
 class Engine {
     constructor() {
@@ -51,15 +97,19 @@ class Engine {
                 break;
             case 'ArrowUp': 
                 this.game.ship.upTriggerOn = true;
+                event.preventDefault();
                 break;
             case 'ArrowLeft': 
                 this.game.ship.leftTriggerOn = true;
+                event.preventDefault();
                 break;
             case 'ArrowDown': 
                 this.game.ship.downTriggerOn = true;
+                event.preventDefault();
                 break
             case 'ArrowRight': 
                 this.game.ship.rightTriggerOn = true;
+                event.preventDefault();
                 break;                
             default:
                 break;        
