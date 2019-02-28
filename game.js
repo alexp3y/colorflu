@@ -3,7 +3,8 @@ const SHIP_RADIUS = 35;
 const ENEMY_RADIUS = 8;
 const AMMO_RADIUS = 5;
 const BULLET_RADIUS = 2;
-const ENEMY_BURST_MAX_RADIUS = 100;
+const ENEMY_BURST_MAX_RADIUS = $(window).height() * 2/5;
+const ENEMY_BURST_MIN_RADIUS = ENEMY_BURST_MAX_RADIUS / 3;
 const AMMO_BURST_MAX_RADIUS = 100;
 const BUBBLES_PER_BURST = 50;
 
@@ -32,6 +33,10 @@ class Game {
         this.board.addEnemyBurst(width * 5/6, height/6)
         this.board.addEnemyBurst(width * 5/6, height/2)
         this.board.addEnemyBurst(width * 5/6, height * 5/6)
+        this.board.addEnemyBurst(width * 4/6, height * 1/3)
+        this.board.addEnemyBurst(width * 4/6, height * 2/3)
+        this.board.addEnemyBurst(width, height * 1/3)
+        this.board.addEnemyBurst(width, height * 2/3)
     }
     updateGame() {
         this.incrementLoopCounter();
@@ -61,13 +66,16 @@ class Game {
     updateEnemyBursts() {
         this.board.enemyBursts.forEach((burst, i) => {
             burst.bubbles.forEach((enemy, j) => {
-                if (enemy.isCollidedWith(this.ship)) { // check ship colission
+                // ship colission
+                if (enemy.isCollidedWith(this.ship)) { 
                     // ship die...
                     // this.board.enemyBursts[i].bubbles.splice(j,1);
-                } else if (this.board.isBubbleOutOfBounds(enemy)) { // boundary check
+                } else if (this.board.isBubbleOutOfBounds(enemy)) { 
+                    // boundary 
                     this.board.enemyBursts[i].bubbles.splice(j,1);
                 } else {
-                    this.board.bullets.forEach((bullet, k) => {  // check bullet colissions
+                    this.board.bullets.forEach((bullet, k) => {  
+                        // bullet colissions
                         if (enemy.isCollidedWith(bullet)) {
                             // enemy die...
                             this.board.enemyBursts[i].bubbles.splice(j,1);
@@ -76,8 +84,13 @@ class Game {
                     });
                 }
             });
-            if (burst.bubbles.length == 0) this.board.enemyBursts.splice(i,1);
-            else if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
+            if (burst.bubbles.length == 0) {
+                this.board.enemyBursts.splice(i,1);
+            } else if (burst.isGrowing()) {
+                if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
+            } else {
+                if (burst.isAtMinRadius()) burst.reverseBurstDirection();
+            }
         });        
     }
     updateAmmoBursts() {
@@ -118,8 +131,14 @@ class Game {
         if (this.board.leftScrollActive) scrollAdjust += SCROLL_ADJUST_VELOCITY;
         else if (this.board.rightScrollActive) scrollAdjust -= SCROLL_ADJUST_VELOCITY;
 
-        this.board.enemyBursts.forEach(burst => burst.bubbles.forEach(b => b.move(scrollAdjust)));
-        this.board.ammoBursts.forEach(burst => burst.bubbles.forEach(b => b.move(scrollAdjust)));
+        this.board.enemyBursts.forEach(burst => {
+            burst.x += scrollAdjust;
+            burst.bubbles.forEach(b => b.move(scrollAdjust));
+        });
+        this.board.ammoBursts.forEach(burst => { 
+            burst.x += scrollAdjust;
+            burst.bubbles.forEach(b => b.move(scrollAdjust));
+        });
         this.board.bullets.forEach(b => b.move(scrollAdjust));
         this.ship.move(0);
     }
@@ -157,7 +176,7 @@ class Board {
         this.ammoBursts.push(ammoBurst);
     }
     addEnemyBurst(x, y) {
-        let enemyBurst = new Burst(x, y, 0, ENEMY_BURST_MAX_RADIUS);
+        let enemyBurst = new Burst(x, y, ENEMY_BURST_MIN_RADIUS, ENEMY_BURST_MAX_RADIUS);
         for (let i=0; i<BUBBLES_PER_BURST; i++) {
             enemyBurst.bubbles.push(new Enemy(x, y));
         }
@@ -183,17 +202,32 @@ class Burst {
         this.x = x,
         this.y = y,
         this.r = 0,
+        this.growing = true,
         this.minRadius = minRadius,
         this.maxRadius = maxRadius,
         this.bubbles = []
     }
     isAtMaxRadius() {
+        let furthestBubble = 0;
         for (let i=0; i<this.bubbles.length; i++) {
-            if (distance(this, this.bubbles[i]) > this.maxRadius) return true;
+            let bubbleDistance = distance(this, this.bubbles[i]);
+            if (bubbleDistance > furthestBubble) furthestBubble = bubbleDistance;
         }
-        return false;
+        return (furthestBubble > this.maxRadius) ? true : false;
+    }
+    isAtMinRadius() {
+        let furthestBubble = 0;
+        for (let i=0; i<this.bubbles.length; i++) {
+            let bubbleDistance = distance(this, this.bubbles[i]);
+            if (bubbleDistance > furthestBubble) furthestBubble = bubbleDistance;
+        }
+        return (furthestBubble < this.minRadius) ? true : false;
+    }
+    isGrowing() {
+        return this.growing;
     }
     reverseBurstDirection() {
+        this.growing = (this.growing) ? false : true;
         this.bubbles.forEach(b => {
             b.xVel *= -1;
             b.yVel *= -1;

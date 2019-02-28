@@ -73,10 +73,10 @@ class Graphics {
         // this.drawCircle(palette.lightPurple.hex, 42);
         // this.drawCircle(palette.purple.hex, 33);
         // this.drawCircle(palette.lightPurple.hex, 28);
-        // this.drawCircle(palette.yellow.hex, 26);
-        // this.drawCircle(palette.orange.hex, 23);
-        // this.drawCircle(palette.darkBlue.hex, 21);
-        // this.drawCircle(palette.pink.hex, 17);
+        this.drawCircle(palette.yellow.hex, 26);
+        this.drawCircle(palette.orange.hex, 23);
+        this.drawCircle(palette.darkBlue.hex, 21);
+        this.drawCircle(palette.pink.hex, 17);
         this.drawCircle(palette.red.hex, 15);
     }
     drawCircle(color, r) {
