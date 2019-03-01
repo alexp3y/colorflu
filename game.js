@@ -5,14 +5,16 @@ const AMMO_RADIUS = 5;
 const BULLET_RADIUS = 2;
 const ENEMY_BURST_MAX_RADIUS = $(window).height() * 2/5;
 const ENEMY_BURST_MIN_RADIUS = ENEMY_BURST_MAX_RADIUS / 3;
-const AMMO_BURST_MAX_RADIUS = 100;
-const BUBBLES_PER_BURST = 50;
+const AMMO_BURST_MAX_RADIUS = $(window).height() * 1/5;
+const AMMO_BURST_MIN_RADIUS = AMMO_BURST_MAX_RADIUS / 4;
+const BUBBLES_PER_BURST = 65;
 
 // Velocities
 const SHIP_VELOCITY = 3;
 const BULLET_VELOCITY = 6;
 const BULLET_VELOCITY_DIAG = Math.sqrt(Math.pow(BULLET_VELOCITY, 2)/2);
 const SCROLL_ADJUST_VELOCITY = 2;
+const PHAGO_VELOCITY = .5;
 
 const GRADIENT_OFFSET = 100;
 
@@ -37,17 +39,28 @@ class Game {
         this.board.addEnemyBurst(width * 4/6, height * 2/3)
         this.board.addEnemyBurst(width, height * 1/3)
         this.board.addEnemyBurst(width, height * 2/3)
+        // add first ammo bursts
+        this.board.addAmmoBurst(width * 1/6, height/2);
+        this.board.addAmmoBurst(width * 1/6, height * 5/12);
+        this.board.addAmmoBurst(width * 1/6, height * 7/12);
     }
+    incrementLoopCounter() {
+        this.loopCounter++;
+        // if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
+    }
+    isDelayReady(delay) {
+        return this.loopCounter%delay == 0;
+    }    
     updateGame() {
         this.incrementLoopCounter();
         if (!this.paused) {
             // scrolling
             this.updateScrolling();
             // update board elements
+            this.updateShip();
             this.updateEnemyBursts();
             this.updateAmmoBursts();
             this.updateBullets();
-            this.updateShip();
             // move all elements
             this.moveGameElements();
         }
@@ -68,18 +81,23 @@ class Game {
             burst.bubbles.forEach((enemy, j) => {
                 // ship colission
                 if (enemy.isCollidedWith(this.ship)) { 
-                    // ship die...
-                    // this.board.enemyBursts[i].bubbles.splice(j,1);
+                    if (enemy.isDestroyed()) {
+                        this.ship.eatEnemy(this.board.enemyBursts[i].bubbles.splice(j,1)[0]);
+                    } else {
+                        // ship die...
+                        // this.board.enemyBursts[i].bubbles.splice(j,1);
+                    }
                 } else if (this.board.isBubbleOutOfBounds(enemy)) { 
                     // boundary 
                     this.board.enemyBursts[i].bubbles.splice(j,1);
                 } else {
                     this.board.bullets.forEach((bullet, k) => {  
                         // bullet colissions
-                        if (enemy.isCollidedWith(bullet)) {
+                        if (enemy.isCollidedWith(bullet) && !enemy.destroyed) {
                             // enemy die...
-                            this.board.enemyBursts[i].bubbles.splice(j,1);
-                            this.board.bullets.splice(k,1);
+                            // this.board.enemyBursts[i].bubbles.splice(j,1);
+                            this.board.enemyBursts[i].bubbles[j].destroy(bullet);
+                            this.board.bullets[k].destroy();
                         }
                     });
                 }
@@ -102,29 +120,41 @@ class Game {
                     this.board.ammoBursts[i].bubbles.splice(j,1);
                 }
             });
-            if (burst.bubbles.length == 0) this.board.ammoBursts.splice(i,1);
-            else if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
-        });        
+            if (burst.bubbles.length == 0) {
+                this.board.ammoBursts.splice(i,1);
+            } else if (burst.isGrowing()) {
+                if (burst.isAtMaxRadius()) burst.reverseBurstDirection();
+            } else {
+                if (burst.isAtMinRadius()) burst.reverseBurstDirection();
+            }        
+        });     
     }
     updateBullets() {
         this.board.bullets.forEach((bullet, i) => {
             if (this.board.isBubbleOutOfBounds(bullet)) this.board.bullets.splice(i,1);
+            else if (bullet.isDestroyed()) this.board.bullets.splice(i, 1);
         });        
     }
     updateShip() {
-        this.ship.applyGas();
-        if (this.board.leftScrollActive || this.board.rightScrollActive) this.ship.xVel = 0;
+        // adjust ship velocity
         this.board.enforceShipBoundary(this.ship);
+        this.ship.applyGas();
+        if (this.board.leftScrollActive || this.board.rightScrollActive) {
+            this.ship.xVel = 0;
+        } 
+        // apply ship velocity adjustments to enemies in phagocytosis
+        this.ship.phagocytosis.forEach((e, i) => {
+            if (radialDistance(this.ship, e) < this.ship.r - 2 * e.r) { // TODO: need to kill these suckers
+                this.ship.phagocytosis.splice(i, 1);
+            } else {
+                e.xVel = e.phagoXVel + this.ship.xVel;
+                e.yVel = e.phagoYVel + this.ship.yVel;
+            }
+        });
+        // spit hot fire like D-Y-L-A-N
         if (this.isDelayReady(SHIP_TRIGGER_DELAY) && this.ship.isShooting()) {
             this.board.bullets.push(this.ship.shootBullet());
         }        
-    }
-    incrementLoopCounter() {
-        this.loopCounter++;
-        // if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
-    }
-    isDelayReady(delay) {
-        return this.loopCounter%delay == 0;
     }
     moveGameElements() {
         let scrollAdjust = 0;
@@ -133,14 +163,15 @@ class Game {
 
         this.board.enemyBursts.forEach(burst => {
             burst.x += scrollAdjust;
-            burst.bubbles.forEach(b => b.move(scrollAdjust));
+            burst.bubbles.forEach(enemy => enemy.move(scrollAdjust));
         });
         this.board.ammoBursts.forEach(burst => { 
             burst.x += scrollAdjust;
-            burst.bubbles.forEach(b => b.move(scrollAdjust));
+            burst.bubbles.forEach(ammo => ammo.move(scrollAdjust));
         });
-        this.board.bullets.forEach(b => b.move(scrollAdjust));
+        this.board.bullets.forEach(bullet => bullet.move(scrollAdjust));
         this.ship.move(0);
+        this.ship.phagocytosis.forEach(e => e.move(0));
     }
 }
 
@@ -163,13 +194,13 @@ class Board {
             ? true : false;
     }
     enforceShipBoundary(ship) {
-        if (ship.x-ship.r <= 0) ship.xVel = 0;
-        if (ship.x+ship.r >= this.w) ship.xVel = 0; 
-        if (ship.y-ship.r <= 0) ship.yVel = 0;
-        if (ship.y+ship.r >= this.h) ship.yVel = 0;
+        if (ship.x-ship.r <= 0) ship.leftGasOn = false;
+        if (ship.x+ship.r >= this.w) ship.rightGasOn = false; 
+        if (ship.y-ship.r <= 0) ship.upGasOn = false;
+        if (ship.y+ship.r >= this.h) ship.downGasOn = false;
     }
     addAmmoBurst(x, y) {
-        let ammoBurst = new Burst(x, y, 0, AMMO_BURST_MAX_RADIUS);
+        let ammoBurst = new Burst(x, y, AMMO_BURST_MIN_RADIUS, AMMO_BURST_MAX_RADIUS);
         for (let i=0; i<BUBBLES_PER_BURST; i++) {
             ammoBurst.bubbles.push(new Ammo(x, y));
         }
@@ -181,18 +212,6 @@ class Board {
             enemyBurst.bubbles.push(new Enemy(x, y));
         }
         this.enemyBursts.push(enemyBurst);
-    }
-    increaseGradient() {
-        if (this.leftWallShade - this.rightWallShade > GRADIENT_OFFSET || this.rightWallShade == 0) {
-            if (this.leftWallShade > 0) this.leftWallShade--;
-        }
-        if (this.rightWallShade > 0) this.rightWallShade--;
-    }
-    decreaseGradient() {
-        if (this.leftWallShade > GRADIENT_OFFSET) {
-            if (this.rightWallShade < 255) this.rightWallShade++;
-        } 
-        if (this.leftWallShade < 255) this.leftWallShade++;
     }
 }
 
@@ -210,16 +229,20 @@ class Burst {
     isAtMaxRadius() {
         let furthestBubble = 0;
         for (let i=0; i<this.bubbles.length; i++) {
-            let bubbleDistance = distance(this, this.bubbles[i]);
-            if (bubbleDistance > furthestBubble) furthestBubble = bubbleDistance;
+            if (!this.bubbles[i].isDestroyed()) {
+                let bubbleDistance = radialDistance(this, this.bubbles[i]);
+                if (bubbleDistance > furthestBubble) furthestBubble = bubbleDistance;
+            }
         }
         return (furthestBubble > this.maxRadius) ? true : false;
     }
     isAtMinRadius() {
         let furthestBubble = 0;
         for (let i=0; i<this.bubbles.length; i++) {
-            let bubbleDistance = distance(this, this.bubbles[i]);
-            if (bubbleDistance > furthestBubble) furthestBubble = bubbleDistance;
+            if (!this.bubbles[i].isDestroyed()) {
+                let bubbleDistance = radialDistance(this, this.bubbles[i]);
+                if (bubbleDistance > furthestBubble) furthestBubble = bubbleDistance;
+            }
         }
         return (furthestBubble < this.minRadius) ? true : false;
     }
@@ -250,7 +273,7 @@ class MovableElement {
         this.y += this.yVel;
     }
     isCollidedWith(element) {
-        return distance(this, element) <= (this.r + element.r);
+        return radialDistance(this, element) <= (this.r + element.r);
     }    
 }
    
@@ -258,6 +281,13 @@ class MovableElement {
 class Bubble extends MovableElement {
     constructor(x, y, r, color) {
         super(x, y, r, randomVelocity(), randomVelocity(), color);
+        this.destroyed = false;
+    }
+    destroy() {
+        this.destroyed = true;
+    }
+    isDestroyed() {
+        return this.destroyed;
     }
 }
 
@@ -279,6 +309,14 @@ class Ammo extends Bubble {
 class Enemy extends Bubble {
     constructor(x, y) {
         super(x, y, ENEMY_RADIUS, 'black');
+        this.phagoXVel = 0,
+        this.phagoYVel = 0;
+    }
+    destroy(bullet) {
+        super.destroy();
+        this.color = bullet.color;
+        this.xVel = 0;
+        this.yVel = 0;        
     }
 }
 
@@ -294,7 +332,8 @@ class Ship extends MovableElement {
         this.downGasOn = false,
         this.leftGasOn = false,
         this.rightGasOn = false,
-        this.ammo = {}
+        this.phagocytosis = [],
+        this.ammo = {};
         // initialize ammo array using palette colors
         Object.keys(palette).forEach(color => this.ammo[color] = 0);
     }
@@ -308,6 +347,16 @@ class Ship extends MovableElement {
             this.xVel = (this.leftGasOn) ? 0 : SHIP_VELOCITY;
         } else {
             this.xVel = (this.leftGasOn) ? -SHIP_VELOCITY : 0;
+        }
+    }
+    eatEnemy(enemy) {
+        if (enemy.isDestroyed()) {
+            let distance = radialDistance(this, enemy);
+            let theta = Math.atan((enemy.y - this.y) / (enemy.x - this.x));
+            enemy.phagoXVel = -PHAGO_VELOCITY * Math.cos(theta);
+            enemy.phagoYVel = -PHAGO_VELOCITY * Math.sin(theta);
+            // if ()
+            this.phagocytosis.push(enemy);
         }
     }
     pickupAmmo(bubble) {
@@ -361,7 +410,7 @@ const randomColor = () => {
     let keys = Object.keys(palette);
     return keys[Math.floor(Math.random() * keys.length)];
 }
-const distance = (p, q) => { 
+const radialDistance = (p, q) => { 
     var dx   = p.x - q.x;         
     var dy   = p.y - q.y;         
     var dist = Math.sqrt( dx*dx + dy*dy ); 

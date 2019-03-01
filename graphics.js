@@ -64,38 +64,42 @@ class Graphics {
         });
     }
     drawShip(ship, progress) {
+        // draw enemies in phagocytosis
+        ship.phagocytosis.forEach(e => this.drawHalo(e.x, e.y, e.r, palette[e.color].hex));
+
+
         // this.drawHalo(palette.blue.hex, 43, 1);
         // this.drawHalo(palette.green.hex, 63, 2);
         // this.drawHalo(palette.maroon.hex, 103, 1);
         
         this.drawCircle(`rgb(${progress/2}, ${progress/2}, ${progress/2})`, 35);
 
-        // this.drawCircle(palette.lightPurple.hex, 42);
-        // this.drawCircle(palette.purple.hex, 33);
-        // this.drawCircle(palette.lightPurple.hex, 28);
-        this.drawCircle(palette.yellow.hex, 26);
-        this.drawCircle(palette.orange.hex, 23);
-        this.drawCircle(palette.darkBlue.hex, 21);
-        this.drawCircle(palette.pink.hex, 17);
-        this.drawCircle(palette.red.hex, 15);
+        this.drawCircle(ship.x, ship.y, 34, palette.red.hex);
+        this.drawCircle(ship.x, ship.y, 33, palette.purple.hex);
+        this.drawCircle(ship.x, ship.y, 28, palette.lightPurple.hex);
+        this.drawCircle(ship.x, ship.y, 26, palette.yellow.hex);
+        this.drawCircle(ship.x, ship.y, 23, palette.orange.hex);
+        this.drawCircle(ship.x, ship.y, 21, palette.darkBlue.hex);
+        this.drawCircle(ship.x, ship.y, 17, palette.pink.hex);
+        // this.drawCircle(palette.red.hex, 15);
     }
-    drawCircle(color, r) {
+    drawCircle(x, y, r, color) {
         this.ctx.fillStyle = color;
         this.ctx.beginPath();
-        this.ctx.arc(this.game.ship.x, this.game.ship.y, r, 0, 2 * Math.PI);
+        this.ctx.arc(x, y, r, 0, 2 * Math.PI);
         this.ctx.fill();
     }
     
-    drawHalo(color, r, width) {
+    drawHalo(x, y, r, color, lineWidth) {
         this.ctx.strokeStyle = color;
         this.ctx.beginPath();
-        this.ctx.lineWidth = width;
-        this.ctx.arc(this.game.ship.x, this.game.ship.y, r, 0, 2 * Math.PI);
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.arc(x, y, r, 0, 2 * Math.PI);
         this.ctx.stroke();
     }    
     drawScore(score) {
     }
-    drawPause(color) {
+    drawPause() {
         this.ctx.font = `${this.h/5}px none`;
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = '';
