@@ -26,6 +26,6 @@ function mousedown(event) {
 }
 
 function render() {
-    engine.graphics.renderGame();
+    engine.graphics.renderGame(engine.game);
     window.requestAnimationFrame(render);
 }

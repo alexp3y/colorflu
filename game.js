@@ -14,7 +14,8 @@ const SHIP_VELOCITY = 3;
 const BULLET_VELOCITY = 6;
 const BULLET_VELOCITY_DIAG = Math.sqrt(Math.pow(BULLET_VELOCITY, 2)/2);
 const SCROLL_ADJUST_VELOCITY = 2;
-const PHAGO_VELOCITY = .5;
+const PHAGO_VELOCITY = .1;
+const PHAGO_PENALTY = .9;
 
 const GRADIENT_OFFSET = 100;
 
@@ -61,8 +62,9 @@ class Game {
             this.updateEnemyBursts();
             this.updateAmmoBursts();
             this.updateBullets();
-            // move all elements
-            this.moveGameElements();
+            // move all elements and update level progress
+            let scrollAdjust = this.moveGameElements();
+            this.levelProgress += -(scrollAdjust);
         }
     }
     updateScrolling() {
@@ -81,9 +83,9 @@ class Game {
             burst.bubbles.forEach((enemy, j) => {
                 // ship colission
                 if (enemy.isCollidedWith(this.ship)) { 
-                    if (enemy.isDestroyed()) {
+                    if (!enemy.isDestroyed()) {
                         this.ship.eatEnemy(this.board.enemyBursts[i].bubbles.splice(j,1)[0]);
-                    } else {
+                    // } else {
                         // ship die...
                         // this.board.enemyBursts[i].bubbles.splice(j,1);
                     }
@@ -136,15 +138,18 @@ class Game {
         });        
     }
     updateShip() {
-        // adjust ship velocity
+        // update ships velocity
         this.board.enforceShipBoundary(this.ship);
         this.ship.applyGas();
         if (this.board.leftScrollActive || this.board.rightScrollActive) {
             this.ship.xVel = 0;
-        } 
-        // apply ship velocity adjustments to enemies in phagocytosis
+        }
+        let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
+        this.ship.xVel *= phagoPenaltyMultiplier;
+        this.ship.yVel *= phagoPenaltyMultiplier;
+        // examine each enemy currently in phagocytosis
         this.ship.phagocytosis.forEach((e, i) => {
-            if (radialDistance(this.ship, e) < this.ship.r - 2 * e.r) { // TODO: need to kill these suckers
+            if (radialDistance(this.ship, e) < this.ship.r - e.r) { // TODO: need to kill these suckers
                 this.ship.phagocytosis.splice(i, 1);
             } else {
                 e.xVel = e.phagoXVel + this.ship.xVel;
@@ -153,13 +158,16 @@ class Game {
         });
         // spit hot fire like D-Y-L-A-N
         if (this.isDelayReady(SHIP_TRIGGER_DELAY) && this.ship.isShooting()) {
-            this.board.bullets.push(this.ship.shootBullet());
+            let bullet = this.ship.shootBullet();
+            if (bullet != null) this.board.bullets.push(bullet);
         }        
     }
     moveGameElements() {
         let scrollAdjust = 0;
         if (this.board.leftScrollActive) scrollAdjust += SCROLL_ADJUST_VELOCITY;
         else if (this.board.rightScrollActive) scrollAdjust -= SCROLL_ADJUST_VELOCITY;
+        let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
+        scrollAdjust *= phagoPenaltyMultiplier;
 
         this.board.enemyBursts.forEach(burst => {
             burst.x += scrollAdjust;
@@ -172,6 +180,7 @@ class Game {
         this.board.bullets.forEach(bullet => bullet.move(scrollAdjust));
         this.ship.move(0);
         this.ship.phagocytosis.forEach(e => e.move(0));
+        return scrollAdjust;
     }
 }
 
@@ -333,6 +342,7 @@ class Ship extends MovableElement {
         this.leftGasOn = false,
         this.rightGasOn = false,
         this.phagocytosis = [],
+        this.infection = [],
         this.ammo = {};
         // initialize ammo array using palette colors
         Object.keys(palette).forEach(color => this.ammo[color] = 0);
@@ -350,14 +360,18 @@ class Ship extends MovableElement {
         }
     }
     eatEnemy(enemy) {
-        if (enemy.isDestroyed()) {
+        // if (enemy.isDestroyed()) {
             let distance = radialDistance(this, enemy);
             let theta = Math.atan((enemy.y - this.y) / (enemy.x - this.x));
             enemy.phagoXVel = -PHAGO_VELOCITY * Math.cos(theta);
             enemy.phagoYVel = -PHAGO_VELOCITY * Math.sin(theta);
+            if (enemy.x < this.x) {
+                enemy.phagoXVel *= -1;
+                enemy.phagoYVel *= -1;
+            }
             // if ()
             this.phagocytosis.push(enemy);
-        }
+        // }
     }
     pickupAmmo(bubble) {
         this.ammo[bubble.color]++;

@@ -1,9 +1,5 @@
 const REFRESH_RATE = 20; //ms
 const palette = {
-    black: {
-        hex: '#000000',
-        powerLvl: 0 
-    },
     red: {
         hex: '#e22b2b',
         powerLvl: 1 
