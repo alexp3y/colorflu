@@ -148,6 +148,6 @@ class Engine {
     }
 
     handleMousedown(event) {
-        this.game.board.addAmmoBurst(event.pageX, event.pageY);   
+        this.game.board.addEnemyBurst(event.pageX, event.pageY);   
     }    
 }

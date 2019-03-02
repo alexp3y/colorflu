@@ -151,6 +151,7 @@ class Game {
         this.ship.phagocytosis.forEach((e, i) => {
             if (radialDistance(this.ship, e) < this.ship.r - e.r) { // TODO: need to kill these suckers
                 this.ship.phagocytosis.splice(i, 1);
+                this.ship.infectionLevel++;
             } else {
                 e.xVel = e.phagoXVel + this.ship.xVel;
                 e.yVel = e.phagoYVel + this.ship.yVel;
@@ -335,7 +336,7 @@ class Enemy extends Bubble {
 
 class Ship extends MovableElement {
     constructor(x, y) {
-        super(x, y, SHIP_RADIUS, 0, 0, 'black');
+        super(x, y, SHIP_RADIUS, 0, 0, 'pink');
         this.upTriggerOn = false,
         this.downTriggerOn = false,
         this.leftTriggerOn = false,
@@ -345,7 +346,7 @@ class Ship extends MovableElement {
         this.leftGasOn = false,
         this.rightGasOn = false,
         this.phagocytosis = [],
-        this.infection = [],
+        this.infectionLevel = 0,
         this.ammo = {};
         // initialize ammo array using palette colors
         Object.keys(palette).forEach(color => this.ammo[color] = 0);
@@ -392,8 +393,17 @@ class Ship extends MovableElement {
             this.phagocytosis.push(enemy);
         }
     }
+    hasAmmo() {
+        let hasAmmo = false;
+        Object.values(this.ammo).forEach(a => {
+            if (a > 0) hasAmmo = true;
+        });
+        return hasAmmo;
+    }
     pickupAmmo(bubble) {
         this.ammo[bubble.color]++;
+        let hpColor = this.selectHighestPowerAmmo();
+        this.color = (hpColor == null) ? 'pink' : hpColor;
     }
     isShooting() {
         return ((this.leftTriggerOn && !this.rightTriggerOn) ||
@@ -401,38 +411,47 @@ class Ship extends MovableElement {
                 (this.upTriggerOn && !this.downTriggerOn) ||
                 (this.downTriggerOn && !this.upTriggerOn)) ? true : false; 
     }
-    shootBullet() {
-        // select the highest power ammo color available
+    selectHighestPowerAmmo() {
+        if (!this.hasAmmo()) {
+            return null;
+        }
         let selected = 'red';
-        Object.keys(this.ammo).forEach(a => { 
+        Object.keys(this.ammo).forEach( a => {
             if (this.ammo[a] > 0 && palette[a].powerLvl > palette[selected].powerLvl) {
                 selected = a;
-            }
+            }            
         });
-        let bullet = new Bullet(this.x, this.y, BULLET_RADIUS, selected);
-        this.ammo[selected]--;
-
-        let xBoost = 0, 
-            yBoost = 0;
-        if (this.upTriggerOn)  {
-            yBoost -= BULLET_VELOCITY;
+        return selected;
+    }
+    shootBullet() {
+        if (this.hasAmmo()) {
+            // select the highest power ammo color available
+            let selected = this.selectHighestPowerAmmo();
+            let bullet = new Bullet(this.x, this.y, BULLET_RADIUS, selected);
+            this.ammo[selected]--;
+    
+            let xBoost = 0, 
+                yBoost = 0;
+            if (this.upTriggerOn)  {
+                yBoost -= BULLET_VELOCITY;
+            }
+            if (this.downTriggerOn) {
+                yBoost += BULLET_VELOCITY;
+            }
+            if (this.leftTriggerOn) {
+                xBoost -= BULLET_VELOCITY;
+            }
+            if (this.rightTriggerOn) {
+                xBoost += BULLET_VELOCITY;
+            }
+            if ((yBoost != 0) && (xBoost !=0)) {
+                yBoost = (yBoost < 0) ? -BULLET_VELOCITY_DIAG : BULLET_VELOCITY_DIAG;
+                xBoost = (xBoost < 0) ? -BULLET_VELOCITY_DIAG : BULLET_VELOCITY_DIAG;
+            } 
+            bullet.xVel += xBoost;
+            bullet.yVel += yBoost;
+            return bullet;
         }
-        if (this.downTriggerOn) {
-            yBoost += BULLET_VELOCITY;
-        }
-        if (this.leftTriggerOn) {
-            xBoost -= BULLET_VELOCITY;
-        }
-        if (this.rightTriggerOn) {
-            xBoost += BULLET_VELOCITY;
-        }
-        if ((yBoost != 0) && (xBoost !=0)) {
-            yBoost = (yBoost < 0) ? -BULLET_VELOCITY_DIAG : BULLET_VELOCITY_DIAG;
-            xBoost = (xBoost < 0) ? -BULLET_VELOCITY_DIAG : BULLET_VELOCITY_DIAG;
-        } 
-        bullet.xVel += xBoost;
-        bullet.yVel += yBoost;
-        return bullet;
     }
 }
 
