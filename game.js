@@ -15,7 +15,7 @@ const BULLET_VELOCITY = 6;
 const BULLET_VELOCITY_DIAG = Math.sqrt(Math.pow(BULLET_VELOCITY, 2)/2);
 const SCROLL_ADJUST_VELOCITY = 2;
 const PHAGO_VELOCITY = .1;
-const PHAGO_PENALTY = .9;
+const PHAGO_PENALTY = .8;
 
 const GRADIENT_OFFSET = 100;
 
@@ -318,6 +318,9 @@ class Ammo extends Bubble {
 class Enemy extends Bubble {
     constructor(x, y) {
         super(x, y, ENEMY_RADIUS, 'black');
+        this.phagoTheta = 0,
+        this.xPhagoOffset = 0,
+        this.yPhagoOffset = 0,
         this.phagoXVel = 0,
         this.phagoYVel = 0;
     }
@@ -360,18 +363,34 @@ class Ship extends MovableElement {
         }
     }
     eatEnemy(enemy) {
-        // if (enemy.isDestroyed()) {
+        if (!enemy.isDestroyed()) {
             let distance = radialDistance(this, enemy);
-            let theta = Math.atan((enemy.y - this.y) / (enemy.x - this.x));
-            enemy.phagoXVel = -PHAGO_VELOCITY * Math.cos(theta);
-            enemy.phagoYVel = -PHAGO_VELOCITY * Math.sin(theta);
+            let xDelta = Math.abs(this.x - enemy.x);
+            let yDelta = Math.abs(this.y - enemy.y);
+            enemy.phagoTheta = Math.atan(yDelta / xDelta);
+            enemy.phagoXVel = PHAGO_VELOCITY * Math.cos(enemy.phagoTheta);
+            enemy.phagoYVel = PHAGO_VELOCITY * Math.sin(enemy.phagoTheta);
             if (enemy.x < this.x) {
+                if (enemy.y < this.y) {
+                    // Q2
+                    enemy.phagoTheta = Math.PI + enemy.phagoTheta;
+                } else {
+                    // Q3
+                    enemy.phagoTheta = Math.PI - enemy.phagoTheta;
+                    enemy.phagoYVel *= -1;
+                }
+            } else {
                 enemy.phagoXVel *= -1;
-                enemy.phagoYVel *= -1;
+                if (enemy.y < this.y) {
+                    // Q1
+                    enemy.phagoTheta = 2*Math.PI - enemy.phagoTheta;
+                } else {
+                    // Q4
+                    enemy.phagoYVel *= -1;
+                }
             }
-            // if ()
             this.phagocytosis.push(enemy);
-        // }
+        }
     }
     pickupAmmo(bubble) {
         this.ammo[bubble.color]++;

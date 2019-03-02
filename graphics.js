@@ -68,21 +68,14 @@ class Graphics {
     drawShip(ship) {
         // draw enemies in phagocytosis
         ship.phagocytosis.forEach(e => {
-            if (e.isDestroyed()) {
-                this.drawHalo(e.x, e.y, e.r, palette[e.color].hex, 1)
-            } else {
-                this.drawHalo(e.x, e.y, e.r, this.progressColor, 1)
-            }    
-
+            this.drawHalo(e.x, e.y, e.r, this.progressColor, 1);
         });
-        this.drawCircle(ship.x, ship.y, 35, palette.pink.hex);
+        this.drawCircle(ship.x, ship.y, SHIP_RADIUS, palette.pink.hex);
         // this.drawCircle(ship.x, ship.y, 33, this.progressColor);
         
         // this.drawHalo(palette.blue.hex, 43, 1);
         // this.drawHalo(palette.green.hex, 63, 2);
         // this.drawHalo(palette.maroon.hex, 103, 1);
-
-        
         
         // this.drawCircle(ship.x, ship.y, 26, palette.blue.hex);
         // this.drawCircle(ship.x, ship.y, 24, palette.green.hex);
@@ -100,8 +93,24 @@ class Graphics {
         // this.drawCircle(ship.x, ship.y, 16, palette.yellow.hex);
         // this.drawCircle(ship.x, ship.y, 14, palette.orange.hex);
         // this.drawCircle(ship.x, ship.y, 12, palette.darkBlue.hex);
-        this.drawCircle(ship.x, ship.y, 10, palette.pink.hex);
+        // this.drawCircle(ship.x, ship.y, 10, palette.pink.hex);
         // this.drawCircle(palette.red.hex, 15);
+        const radiusOffset = 10;
+        let plasmidRadius = ship.r - radiusOffset;
+        ship.phagocytosis.forEach(e => {
+            this.ctx.beginPath();       
+            let xFrom = ship.x + (ship.r * Math.cos(e.phagoTheta));
+            let yFrom = ship.y + (ship.r * Math.sin(e.phagoTheta));
+            let xTo = ship.x + ((ship.r - radiusOffset) * Math.cos(e.phagoTheta));
+            let yTo = ship.y + ((ship.r - radiusOffset) * Math.sin(e.phagoTheta));
+            this.ctx.moveTo(xFrom, yFrom);
+            // this.ctx.lineWidth = 2; 
+            this.ctx.lineTo(xTo, yTo);
+            this.ctx.stroke();
+            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .21, e.phagoTheta - .21, true);
+            this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+            plasmidRadius--;
+        });        
     }
 
 
@@ -112,13 +121,13 @@ class Graphics {
         this.ctx.fill();
     }
     
-    drawHalo(x, y, r, color, lineWidth, startRad, endRad) {
+    drawHalo(x, y, r, color, lineWidth, startRad, endRad, anti) {
         startRad = (startRad) ? startRad : 0;
         endRad = (endRad) ? endRad : 2 * Math.PI;
         this.ctx.strokeStyle = color;
         this.ctx.beginPath();
         this.ctx.lineWidth = lineWidth;
-        this.ctx.arc(x, y, r, startRad, endRad);
+        this.ctx.arc(x, y, r, startRad, endRad, anti);
         this.ctx.stroke();
     }    
 
