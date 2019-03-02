@@ -1,5 +1,5 @@
 // Radii
-const SHIP_RADIUS = 35;
+const SHIP_RADIUS = 30;
 const ENEMY_RADIUS = 8;
 const AMMO_RADIUS = 5;
 const BULLET_RADIUS = 2;
@@ -41,7 +41,7 @@ class Game {
         this.board.addEnemyBurst(width, height * 1/3)
         this.board.addEnemyBurst(width, height * 2/3)
         // add first ammo bursts
-        this.board.addAmmoBurst(width * 1/6, height/2);
+        // this.board.addAmmoBurst(width * 1/6, height/2);
         this.board.addAmmoBurst(width * 1/6, height * 5/12);
         this.board.addAmmoBurst(width * 1/6, height * 7/12);
     }
@@ -402,8 +402,6 @@ class Ship extends MovableElement {
     }
     pickupAmmo(bubble) {
         this.ammo[bubble.color]++;
-        let hpColor = this.selectHighestPowerAmmo();
-        this.color = (hpColor == null) ? 'pink' : hpColor;
     }
     isShooting() {
         return ((this.leftTriggerOn && !this.rightTriggerOn) ||

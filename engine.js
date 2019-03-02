@@ -20,10 +20,10 @@ const palette = {
         hex: '#fde02a',
         powerLvl: 5
     },
-    lightPurple: {
-        hex: '#e3dff7',
-        powerLvl: 6
-    },
+    // lightPurple: {
+    //     hex: '#b7abee',
+    //     powerLvl: 6
+    // },
     purple: {
         hex: '#390f59',
         powerLvl: 7

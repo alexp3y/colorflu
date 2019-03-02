@@ -19,7 +19,7 @@ class Graphics {
         this.drawShip(game.ship);
         this.drawScore(game.score);
         if (game.paused) {
-            this.drawPause(game.level);
+            this.drawPause(game.ship);
         }
     }
     initCanvas() {
@@ -66,10 +66,21 @@ class Graphics {
         board.bullets.forEach(bullet => this.drawCircle(bullet.x, bullet.y, bullet.r, palette[bullet.color].hex));
     }
     drawShip(ship) {
+        // draw ammo halo
+        let haloWidth = ship.r + 5;
+        Object.keys(ship.ammo).forEach(a => {
+            for (let i = 0; i < ship.ammo[a]; i++) {
+                this.drawHalo(ship.x, ship.y, haloWidth, this.hex2rgba(palette[a].hex, '0.2'), 1, 0, 2*Math.PI);
+                haloWidth += 2;
+            }
+        });
+
         // draw enemies in phagocytosis
         ship.phagocytosis.forEach(e => {
             this.drawHalo(e.x, e.y, e.r, this.progressColor, 1);
         });
+
+        // DRAW SHIP
         this.drawCircle(ship.x, ship.y, SHIP_RADIUS, palette[ship.color].hex);
 
         const radiusOffset = 10;
@@ -88,7 +99,7 @@ class Graphics {
             this.ctx.moveTo(xFrom, yFrom);
             this.ctx.lineTo(xTo, yTo);
             this.ctx.stroke();
-            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .21, e.phagoTheta - .21, true);
+            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .22, e.phagoTheta - .22, true);
             this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
             plasmidRadius--;
         });        
@@ -115,10 +126,17 @@ class Graphics {
     drawScore(score) {
     }
 
-    drawPause() {
+    drawPause(ship) {
         this.ctx.font = `${this.h/5}px IBM Plex Sans`;
         this.ctx.textAlign = "center";
-        this.ctx.fillStyle = '';
+        this.ctx.fillStyle = ship.color;
         this.ctx.fillText("PAUSED", this.w/2, this.h/2);        
+    }
+
+    hex2rgba(hex, alpha) {
+        let r = parseInt(hex.slice(1,3), 16);
+        let g = parseInt(hex.slice(3,5), 16);
+        let b = parseInt(hex.slice(5,7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 }
