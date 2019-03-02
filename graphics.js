@@ -57,20 +57,20 @@ class Graphics {
         }
         board.enemyBursts.forEach(burst => burst.bubbles.forEach(e => {
             if (e.isDestroyed()) {
-                this.drawHalo(e.x, e.y, e.r, palette[e.color].hex, 1);
+                this.drawCircle(e.x, e.y, e.r, this.hex2rgba(palette[e.color].hex, 0.2));
             } else {
                 this.drawHalo(e.x, e.y, e.r, this.progressColor, 1);
             }
         }));
-        board.ammoBursts.forEach(burst => burst.bubbles.forEach(a => this.drawCircle(a.x, a.y, a.r, palette[a.color].hex)));
+        board.ammoBursts.forEach(burst => burst.bubbles.forEach(a => this.drawCircle(a.x, a.y, a.r, this.hex2rgba(palette[a.color].hex, 0.75))));
         board.bullets.forEach(bullet => this.drawCircle(bullet.x, bullet.y, bullet.r, palette[bullet.color].hex));
     }
     drawShip(ship) {
         // draw ammo halo
-        let haloWidth = ship.r + 5;
+        let haloWidth = ship.r + 2;
         Object.keys(ship.ammo).forEach(a => {
             for (let i = 0; i < ship.ammo[a]; i++) {
-                this.drawHalo(ship.x, ship.y, haloWidth, this.hex2rgba(palette[a].hex, '0.2'), 1, 0, 2*Math.PI);
+                this.drawHalo(ship.x, ship.y, haloWidth, this.hex2rgba(palette[a].hex, 0.2), 1, 0, 2*Math.PI);
                 haloWidth += 2;
             }
         });
@@ -83,7 +83,7 @@ class Graphics {
         // DRAW SHIP
         this.drawCircle(ship.x, ship.y, SHIP_RADIUS, palette[ship.color].hex);
 
-        const radiusOffset = 10;
+        const radiusOffset = 5;
         let plasmidRadius = ship.r - radiusOffset; // number of total plasmids
         // predraw infection level plasmids
         for (let i = 0; i < ship.infectionLevel; i++) {

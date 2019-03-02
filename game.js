@@ -73,37 +73,30 @@ class Game {
         this.board.leftScrollActive = (this.levelProgress > 0 && this.ship.leftGasOn)
             ? true : false;
 
-        if (this.isDelayReady(SCROLL_DELAY)) {
-            if (this.board.rightScrollActive) this.levelProgress++;
-            else if (this.board.leftScrollActive) this.levelProgress--;
-        }
+        // if (this.isDelayReady(SCROLL_DELAY)) {
+        //     if (this.board.rightScrollActive) this.levelProgress++;
+        //     else if (this.board.leftScrollActive) this.levelProgress--;
+        // }
     }
     updateEnemyBursts() {
         this.board.enemyBursts.forEach((burst, i) => {
-            burst.bubbles.forEach((enemy, j) => {
-                // ship colission
-                if (enemy.isCollidedWith(this.ship)) { 
+            burst.bubbles.forEach((enemy, j) => {                
+                if (enemy.isCollidedWith(this.ship)) {  // enemy-ship colission
                     if (!enemy.isDestroyed()) {
                         this.ship.eatEnemy(this.board.enemyBursts[i].bubbles.splice(j,1)[0]);
-                    // } else {
-                        // ship die...
-                        // this.board.enemyBursts[i].bubbles.splice(j,1);
                     }
-                } else if (this.board.isBubbleOutOfBounds(enemy)) { 
-                    // boundary 
+                } else if (this.board.isBubbleOutOfBounds(enemy)) { // enemy boundary check
                     this.board.enemyBursts[i].bubbles.splice(j,1);
                 } else {
-                    this.board.bullets.forEach((bullet, k) => {  
-                        // bullet colissions
+                    this.board.bullets.forEach((bullet, k) => {  // enemy-bullet colissions
                         if (enemy.isCollidedWith(bullet) && !enemy.destroyed) {
-                            // enemy die...
-                            // this.board.enemyBursts[i].bubbles.splice(j,1);
                             this.board.enemyBursts[i].bubbles[j].destroy(bullet);
                             this.board.bullets[k].destroy();
                         }
                     });
                 }
             });
+            // burst-level actions
             if (burst.bubbles.length == 0) {
                 this.board.enemyBursts.splice(i,1);
             } else if (burst.isGrowing()) {
