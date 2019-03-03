@@ -70,7 +70,7 @@ class Graphics {
         let haloWidth = ship.r + 2;
         Object.keys(ship.ammo).forEach(a => {
             for (let i = 0; i < ship.ammo[a]; i++) {
-                this.drawHalo(ship.x, ship.y, haloWidth, this.hex2rgba(palette[a].hex, 0.2), 1, 0, 2*Math.PI);
+                this.drawHalo(ship.x, ship.y, haloWidth, this.hex2rgba(palette[a].hex, 0.18), 1, 0, 2*Math.PI);
                 haloWidth += 2;
             }
         });
@@ -83,26 +83,31 @@ class Graphics {
         // DRAW SHIP
         this.drawCircle(ship.x, ship.y, SHIP_RADIUS, palette[ship.color].hex);
 
-        const radiusOffset = 5;
-        let plasmidRadius = ship.r - radiusOffset; // number of total plasmids
+        // let plasmidRadius = ship.r - radiusOffset; // number of total plasmids
         // predraw infection level plasmids
-        for (let i = 0; i < ship.infectionLevel; i++) {
-            this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true);
-            plasmidRadius--;
-        }
+        // for (let i = 0; i < ship.infectionLevel; i++) {
+        //     this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true);
+        //     plasmidRadius--;
+        // }
         ship.phagocytosis.forEach(e => {
             this.ctx.beginPath();       
             let xFrom = ship.x + (ship.r * Math.cos(e.phagoTheta));
             let yFrom = ship.y + (ship.r * Math.sin(e.phagoTheta));
-            let xTo = ship.x + ((ship.r - radiusOffset) * Math.cos(e.phagoTheta));
-            let yTo = ship.y + ((ship.r - radiusOffset) * Math.sin(e.phagoTheta));
+            let xTo = ship.x + ((ship.r - INFECT_RADIUS_OFFSET) * Math.cos(e.phagoTheta));
+            let yTo = ship.y + ((ship.r - INFECT_RADIUS_OFFSET) * Math.sin(e.phagoTheta));
+            let xPlasmid = ship.x + ((ship.r - INFECT_RADIUS_OFFSET - PLASMID_RADIUS) * Math.cos(e.phagoTheta));
+            let yPlasmid = ship.y + ((ship.r - INFECT_RADIUS_OFFSET - PLASMID_RADIUS) * Math.sin(e.phagoTheta));
             this.ctx.moveTo(xFrom, yFrom);
             this.ctx.lineTo(xTo, yTo);
             this.ctx.stroke();
-            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .22, e.phagoTheta - .22, true);
-            this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
-            plasmidRadius--;
-        });        
+            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .25, e.phagoTheta - .25, true);
+            // this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+            this.drawHalo(xPlasmid, yPlasmid, PLASMID_RADIUS, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+            // plasmidRadius--;
+        });
+        ship.infection.forEach(i => {
+            this.drawHalo(i.x, i.y, i.r, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+        });
     }
 
 

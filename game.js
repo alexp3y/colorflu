@@ -1,8 +1,9 @@
 // Radii
-const SHIP_RADIUS = 30;
+const SHIP_RADIUS = 25;
 const ENEMY_RADIUS = 8;
 const AMMO_RADIUS = 5;
-const BULLET_RADIUS = 2;
+const BULLET_RADIUS = 5;
+const PLASMID_RADIUS = 2;
 const ENEMY_BURST_MAX_RADIUS = $(window).height() * 2/5;
 const ENEMY_BURST_MIN_RADIUS = ENEMY_BURST_MAX_RADIUS / 3;
 const AMMO_BURST_MAX_RADIUS = $(window).height() * 1/5;
@@ -18,6 +19,7 @@ const PHAGO_VELOCITY = .1;
 const PHAGO_PENALTY = .8;
 
 const GRADIENT_OFFSET = 100;
+const INFECT_RADIUS_OFFSET = 5;
 
 // Clock Delays
 const SHIP_TRIGGER_DELAY = 3;
@@ -143,8 +145,7 @@ class Game {
         // examine each enemy currently in phagocytosis
         this.ship.phagocytosis.forEach((e, i) => {
             if (radialDistance(this.ship, e) < this.ship.r - e.r) { // TODO: need to kill these suckers
-                this.ship.phagocytosis.splice(i, 1);
-                this.ship.infectionLevel++;
+                this.ship.addInfection(this.ship.phagocytosis.splice(i, 1)[0]);
             } else {
                 e.xVel = e.phagoXVel + this.ship.xVel;
                 e.yVel = e.phagoYVel + this.ship.yVel;
@@ -174,6 +175,21 @@ class Game {
         this.board.bullets.forEach(bullet => bullet.move(scrollAdjust));
         this.ship.move(0);
         this.ship.phagocytosis.forEach(e => e.move(0));
+        // examine each infected plasmid
+        this.ship.infection.forEach(p => {
+            p.xVel = p.plasmidXVel + this.ship.xVel;
+            p.yVel = p.plasmidYVel + this.ship.yVel;
+            // simulate movement to see if current trajectory is valid
+            let pFuture = new MovableElement(p.x, p.y, p.r, p.xVel, p.yVel);
+            pFuture.move(0);
+            if (radialDistance(this.ship, pFuture) > this.ship.r - (1.5 * PLASMID_RADIUS)) {
+                p.xVel = this.ship.xVel;
+                p.yVel = this.ship.yVel;
+                p.plasmidXVel = randomVelocity();
+                p.plasmidYVel = randomVelocity();
+            }
+            p.move(0);
+        });
         return scrollAdjust;
     }
 }
@@ -316,7 +332,9 @@ class Enemy extends Bubble {
         this.xPhagoOffset = 0,
         this.yPhagoOffset = 0,
         this.phagoXVel = 0,
-        this.phagoYVel = 0;
+        this.phagoYVel = 0,
+        this.plasmidXVel = 0,
+        this.plasmidYVel = 0;
     }
     destroy(bullet) {
         super.destroy();
@@ -338,8 +356,8 @@ class Ship extends MovableElement {
         this.downGasOn = false,
         this.leftGasOn = false,
         this.rightGasOn = false,
+        this.infection = [],
         this.phagocytosis = [],
-        this.infectionLevel = 0,
         this.ammo = {};
         // initialize ammo array using palette colors
         Object.keys(palette).forEach(color => this.ammo[color] = 0);
@@ -355,6 +373,14 @@ class Ship extends MovableElement {
         } else {
             this.xVel = (this.leftGasOn) ? -SHIP_VELOCITY : 0;
         }
+    }
+    addInfection(enemy) {
+        enemy.x = this.x + ((this.r - INFECT_RADIUS_OFFSET - PLASMID_RADIUS) * Math.cos(enemy.phagoTheta));
+        enemy.y = this.y + ((this.r - INFECT_RADIUS_OFFSET - PLASMID_RADIUS) * Math.sin(enemy.phagoTheta));
+        enemy.plasmidXVel = randomVelocity();
+        enemy.plasmidYVel = randomVelocity();
+        enemy.r = PLASMID_RADIUS;
+        this.infection.push(enemy);
     }
     eatEnemy(enemy) {
         if (!enemy.isDestroyed()) {
