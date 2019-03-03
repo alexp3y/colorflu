@@ -20,6 +20,7 @@ const PHAGO_PENALTY = .8;
 
 const GRADIENT_OFFSET = 100;
 const INFECT_RADIUS_OFFSET = 5;
+const INFECTION_LIMIT = 10;
 
 // Clock Delays
 const SHIP_TRIGGER_DELAY = 3;
@@ -31,6 +32,7 @@ class Game {
         this.board = new Board(height, width);
         this.ship = new Ship(width/3, height/2 ),
         this.paused = false,
+        this.gameOver = false,
         this.level = 1,
         this.levelProgress = 0,
         this.loopCounter = 0;
@@ -59,7 +61,6 @@ class Game {
         if (!this.paused) {
             // scrolling
             this.updateScrolling();
-            // update board elements
             this.updateShip();
             this.updateEnemyBursts();
             this.updateAmmoBursts();
@@ -74,17 +75,12 @@ class Game {
             ? true : false;
         this.board.leftScrollActive = (this.levelProgress > 0 && this.ship.leftGasOn)
             ? true : false;
-
-        // if (this.isDelayReady(SCROLL_DELAY)) {
-        //     if (this.board.rightScrollActive) this.levelProgress++;
-        //     else if (this.board.leftScrollActive) this.levelProgress--;
-        // }
     }
     updateEnemyBursts() {
         this.board.enemyBursts.forEach((burst, i) => {
             burst.bubbles.forEach((enemy, j) => {                
                 if (enemy.isCollidedWith(this.ship)) {  // enemy-ship colission
-                    if (!enemy.isDestroyed()) {
+                    if (!enemy.isDestroyed() && !this.isGameOver()) {
                         this.ship.eatEnemy(this.board.enemyBursts[i].bubbles.splice(j,1)[0]);
                     }
                 } else if (this.board.isBubbleOutOfBounds(enemy)) { // enemy boundary check
@@ -142,15 +138,25 @@ class Game {
         let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
         this.ship.xVel *= phagoPenaltyMultiplier;
         this.ship.yVel *= phagoPenaltyMultiplier;
-        // examine each enemy currently in phagocytosis
+        // check if its time to end this rodeo
+        if (this.isGameOver() || this.ship.phagocytosis.length + this.ship.infection.length >= INFECTION_LIMIT) {
+            this.gameOver = true;
+            this.ship.xVel = 0;
+            this.ship.yVel = 0;
+        }
+        // always update the phago enemies
         this.ship.phagocytosis.forEach((e, i) => {
-            if (radialDistance(this.ship, e) < this.ship.r - e.r) { // TODO: need to kill these suckers
+            if (radialDistance(this.ship, e) < this.ship.r - e.r) {
                 this.ship.addInfection(this.ship.phagocytosis.splice(i, 1)[0]);
             } else {
                 e.xVel = e.phagoXVel + this.ship.xVel;
                 e.yVel = e.phagoYVel + this.ship.yVel;
             }
         });
+        // when no more phago, destroy the ship
+        if (this.isGameOver() && this.ship.phagocytosis.length == 0) {
+            this.ship.destroy();            
+        }
         // spit hot fire like D-Y-L-A-N
         if (this.isDelayReady(SHIP_TRIGGER_DELAY) && this.ship.isShooting()) {
             let bullet = this.ship.shootBullet();
@@ -158,31 +164,47 @@ class Game {
         }        
     }
     moveGameElements() {
-        let scrollAdjust = 0;
-        if (this.board.leftScrollActive) scrollAdjust += SCROLL_ADJUST_VELOCITY;
-        else if (this.board.rightScrollActive) scrollAdjust -= SCROLL_ADJUST_VELOCITY;
-        let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
-        scrollAdjust *= phagoPenaltyMultiplier;
-
+        let scrollAdjust = this.determineScrollAdjust();
+        // move enemy bursts
         this.board.enemyBursts.forEach(burst => {
             burst.x += scrollAdjust;
             burst.bubbles.forEach(enemy => enemy.move(scrollAdjust));
         });
+        // move ammo bursts
         this.board.ammoBursts.forEach(burst => { 
             burst.x += scrollAdjust;
             burst.bubbles.forEach(ammo => ammo.move(scrollAdjust));
         });
+        // move bullets
         this.board.bullets.forEach(bullet => bullet.move(scrollAdjust));
+        // move ship
+        if (this.ship.isDestroyed()) {
+            this.moveDestroyedShip();
+        } else {
+            this.moveShip();
+        }
+        return scrollAdjust;
+    }
+    determineScrollAdjust() {
+        let scrollAdjust = 0;
+        if (!this.isGameOver()) {
+            if (this.board.leftScrollActive) scrollAdjust += SCROLL_ADJUST_VELOCITY;
+            else if (this.board.rightScrollActive) scrollAdjust -= SCROLL_ADJUST_VELOCITY;
+            let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
+            scrollAdjust *= phagoPenaltyMultiplier;
+        }
+        return scrollAdjust;
+    }
+    moveShip() {
         this.ship.move(0);
         this.ship.phagocytosis.forEach(e => e.move(0));
-        // examine each infected plasmid
         this.ship.infection.forEach(p => {
             p.xVel = p.plasmidXVel + this.ship.xVel;
             p.yVel = p.plasmidYVel + this.ship.yVel;
-            // simulate movement to see if current trajectory is valid
+            // simulate movement to see if current trajectory is possible
             let pFuture = new MovableElement(p.x, p.y, p.r, p.xVel, p.yVel);
             pFuture.move(0);
-            if (radialDistance(this.ship, pFuture) > this.ship.r - (1.5 * PLASMID_RADIUS)) {
+            if (radialDistance(this.ship, pFuture) >= this.ship.r - (1.5 * PLASMID_RADIUS)) {
                 p.xVel = this.ship.xVel;
                 p.yVel = this.ship.yVel;
                 p.plasmidXVel = randomVelocity();
@@ -190,7 +212,20 @@ class Game {
             }
             p.move(0);
         });
-        return scrollAdjust;
+    }
+    moveDestroyedShip() {
+        this.ship.infection.forEach(p => {
+            p.xVel = p.plasmidXVel;
+            p.yVel = p.plasmidYVel;
+            p.move(0);
+        })
+    }
+    moveInfectionBordered() {
+
+    }
+    moveInfectionNoBorder
+    isGameOver() {
+        return this.gameOver;
     }
 }
 
@@ -285,7 +320,8 @@ class MovableElement {
         this.r = r,
         this.xVel = xVel,
         this.yVel = yVel, 
-        this.color = color;
+        this.color = color
+        this.destroyed = false;
     }
     move(scrollAdjust) {
         this.x += this.xVel+scrollAdjust;
@@ -293,6 +329,12 @@ class MovableElement {
     }
     isCollidedWith(element) {
         return radialDistance(this, element) <= (this.r + element.r);
+    }
+    destroy() {
+        this.destroyed = true;
+    }
+    isDestroyed() {
+        return this.destroyed;
     }    
 }
    
@@ -300,13 +342,6 @@ class MovableElement {
 class Bubble extends MovableElement {
     constructor(x, y, r, color) {
         super(x, y, r, randomVelocity(), randomVelocity(), color);
-        this.destroyed = false;
-    }
-    destroy() {
-        this.destroyed = true;
-    }
-    isDestroyed() {
-        return this.destroyed;
     }
 }
 

@@ -16,7 +16,11 @@ class Graphics {
 
         this.clearScreen();
         this.drawBoard(game.board, game.level);
-        this.drawShip(game.ship);
+        if (game.ship.isDestroyed()) {
+            this.drawDestroyedShip(game.ship);
+        } else {
+            this.drawShip(game.ship);
+        }
         this.drawScore(game.score);
         if (game.paused) {
             this.drawPause(game.ship);
@@ -74,21 +78,11 @@ class Graphics {
                 haloWidth += 2;
             }
         });
-
         // draw enemies in phagocytosis
-        ship.phagocytosis.forEach(e => {
-            this.drawHalo(e.x, e.y, e.r, this.progressColor, 1);
-        });
-
+        ship.phagocytosis.forEach(e => this.drawHalo(e.x, e.y, e.r, this.progressColor, 1));
         // DRAW SHIP
         this.drawCircle(ship.x, ship.y, SHIP_RADIUS, palette[ship.color].hex);
-
-        // let plasmidRadius = ship.r - radiusOffset; // number of total plasmids
-        // predraw infection level plasmids
-        // for (let i = 0; i < ship.infectionLevel; i++) {
-        //     this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true);
-        //     plasmidRadius--;
-        // }
+        // draw phagocytosis cells
         ship.phagocytosis.forEach(e => {
             this.ctx.beginPath();       
             let xFrom = ship.x + (ship.r * Math.cos(e.phagoTheta));
@@ -100,16 +94,21 @@ class Graphics {
             this.ctx.moveTo(xFrom, yFrom);
             this.ctx.lineTo(xTo, yTo);
             this.ctx.stroke();
-            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .25, e.phagoTheta - .25, true);
-            // this.drawHalo(ship.x, ship.y, plasmidRadius, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+            this.drawHalo(ship.x, ship.y, SHIP_RADIUS, this.progressColor, 1, e.phagoTheta + .3, e.phagoTheta - .3, true);
             this.drawHalo(xPlasmid, yPlasmid, PLASMID_RADIUS, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
-            // plasmidRadius--;
         });
+        // draw infected plasmids
         ship.infection.forEach(i => {
             this.drawHalo(i.x, i.y, i.r, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
         });
     }
-
+    
+    drawDestroyedShip(ship) {
+        // draw infected plasmids
+        ship.infection.forEach(i => {
+            this.drawHalo(i.x, i.y, i.r, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+        });
+    }
 
     drawCircle(x, y, r, color) {
         this.ctx.fillStyle = color;
