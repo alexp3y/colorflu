@@ -20,7 +20,8 @@ const PHAGO_PENALTY = .8;
 
 const GRADIENT_OFFSET = 100;
 const INFECT_RADIUS_OFFSET = 5;
-const INFECTION_LIMIT = 10;
+const INFECTION_LIMIT = 50;
+const DESTROYED_SHIP_FRAGMENTS = 16;
 
 // Clock Delays
 const SHIP_TRIGGER_DELAY = 3;
@@ -154,7 +155,7 @@ class Game {
             }
         });
         // when no more phago, destroy the ship
-        if (this.isGameOver() && this.ship.phagocytosis.length == 0) {
+        if (this.isGameOver() && !this.ship.isDestroyed() && this.ship.phagocytosis.length == 0) {
             this.ship.destroy();            
         }
         // spit hot fire like D-Y-L-A-N
@@ -219,6 +220,7 @@ class Game {
             p.yVel = p.plasmidYVel;
             p.move(0);
         })
+        this.ship.destroyedFragments.forEach(f => f.move(0));
     }
     moveInfectionBordered() {
 
@@ -391,11 +393,18 @@ class Ship extends MovableElement {
         this.downGasOn = false,
         this.leftGasOn = false,
         this.rightGasOn = false,
+        this.destroyedFragments = [],
         this.infection = [],
         this.phagocytosis = [],
         this.ammo = {};
         // initialize ammo array using palette colors
         Object.keys(palette).forEach(color => this.ammo[color] = 0);
+    }
+    destroy() {
+        this.destroyed = true;
+        for (let i = 0; i < DESTROYED_SHIP_FRAGMENTS; i++) {
+            this.destroyedFragments.push(new Bubble(this.x, this.y, this.r, this.color));
+        }
     }
     applyGas() {
         if (this.upGasOn) {

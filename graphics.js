@@ -104,9 +104,18 @@ class Graphics {
     }
     
     drawDestroyedShip(ship) {
-        // draw infected plasmids
+        // draw free-floating infected plasmids
         ship.infection.forEach(i => {
             this.drawHalo(i.x, i.y, i.r, this.progressColor, 2, 0, 2*Math.PI, true); // e.phagoTheta + .21, e.phagoTheta - .21, true);
+        });
+        // simulate broken apart ship wall
+        let radIncrement = 2*Math.PI / DESTROYED_SHIP_FRAGMENTS;
+        let fragmentStartRad = 0;
+        let fragmentEndRad = radIncrement;
+        ship.destroyedFragments.forEach(f => {
+            this.drawHalo(f.x, f.y, f.r, this.hex2rgba(palette[f.color].hex, 0.5), INFECT_RADIUS_OFFSET, fragmentStartRad, fragmentEndRad);
+            fragmentStartRad += radIncrement;
+            fragmentEndRad += radIncrement;
         });
     }
 
