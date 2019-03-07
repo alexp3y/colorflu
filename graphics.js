@@ -1,19 +1,19 @@
+const CAPSULE_IMG_POS = 20;
+
 class Graphics {
     constructor(h, w) {
         this.h = h,
         this.w = w,
         this.progressColor = '',
-        this.baseColor = '',
-        this.offsetColor = '',
+        this.gradBaseColor = '',
+        this.gradOffsetColor = '',
+        this.capsuleImg = new Image(),
         this.ctx = this.initCanvas();
+        this.initImages();
+
     }
     renderGame(game) {
-        let progressShade = Math.floor(game.levelProgress/18);
-        this.progressColor = this.makeColor(progressShade);
-        let baseShade = 255 - progressShade;
-        this.baseColor = this.makeColor(baseShade);
-        this.offsetColor = this.makeColor(baseShade - GRADIENT_OFFSET);
-
+        this.updateProgressColors(game.levelProgress);
         this.clearScreen();
         this.drawBoard(game.board, game.level);
         if (game.ship.isDestroyed()) {
@@ -25,12 +25,46 @@ class Graphics {
         if (game.paused) {
             this.drawPause(game.ship);
         }
+        this.ctx.fillStyle = 'red';
+        
+        this.drawTitle(game);
+        this.drawImage()
     }
     initCanvas() {
         let canvas = document.getElementById('board');
         canvas.setAttribute('height', this.h);
         canvas.setAttribute('width', this.w);
         return canvas.getContext('2d');
+    }
+    initImages() {
+        this.capsuleImg.src = './capsule.png';   
+    }
+    drawImage() {
+        this.ctx.drawImage(this.capsuleImg, 10, 10);
+        // let map = this.ctx.getImageData(10,10,50,100);
+        // for (var p = 0, len = map.data.length; p < len; p += 4) {
+        //     map.data[p] = this.progressShade;
+        //     map.data[p+1] = this.progressShade;
+        //     map.data[p+2] = this.progressShade;
+        // }
+        // this.ctx.putImageData(map, 10, 10);      
+    }
+    updateProgressColors(progress) {
+        // gradient colors
+        let gradBaseShade = 255 - Math.floor(progress/18);
+        let gradOffsetShade = gradBaseShade - GRADIENT_OFFSET;
+        this.gradBaseColor = this.makeColor(gradBaseShade);
+        this.gradOffsetColor = this.makeColor(gradBaseShade - GRADIENT_OFFSET);        
+        // progress color
+        let progressShade = Math.floor(progress/9);
+        if (progress < 3000) {
+            if (gradOffsetShade - progressShade < 50) {
+                progressShade += 150;
+            }
+            this.progressColor = this.makeColor(progressShade);
+        } else {
+            this.progressColor = this.makeColor(255);
+        }
     }
     clearScreen() {
         this.ctx.clearRect(0,0,this.w,this.h);
@@ -42,14 +76,14 @@ class Graphics {
         let gradient = this.ctx.createLinearGradient(0, 0, board.w, 0);
         switch (level) {
             case 1: // white -> black
-                gradient.addColorStop(0, this.baseColor);
-                gradient.addColorStop(1, this.offsetColor);
+                gradient.addColorStop(0, this.gradBaseColor);
+                gradient.addColorStop(1, this.gradOffsetColor);
                 this.ctx.fillStyle = gradient;
                 this.ctx.fillRect(0, 0, board.w, board.h);
                 break;
             case 2: // black -> red
-                gradient.addColorStop(0, this.baseColor);
-                gradient.addColorStop(1, this.offsetColor);
+                gradient.addColorStop(0, this.gradBaseColor);
+                gradient.addColorStop(1, this.gradOffsetColor);
                 this.ctx.fillStyle = gradient;
                 this.ctx.fillRect(0, 0, board.w, board.h);
                 break;
@@ -119,14 +153,16 @@ class Graphics {
         });
     }
 
-    drawCircle(x, y, r, color) {
+    drawCircle(x, y, r, color, anti) {
+        anti = (anti) ? true : false;
         this.ctx.fillStyle = color;
         this.ctx.beginPath();
-        this.ctx.arc(x, y, r, 0, 2 * Math.PI);
+        this.ctx.arc(x, y, r, 0, 2 * Math.PI, anti);
         this.ctx.fill();
     }
     
     drawHalo(x, y, r, color, lineWidth, startRad, endRad, anti) {
+        anti = (anti) ? true : false;
         startRad = (startRad) ? startRad : 0;
         endRad = (endRad) ? endRad : 2 * Math.PI;
         this.ctx.strokeStyle = color;
@@ -139,11 +175,29 @@ class Graphics {
     drawScore(score) {
     }
 
+    drawTitle(game) {
+        let menuRadius = this.h * 2/3;
+        this.drawCircle(this.w/2, this.h/2, menuRadius, this.hex2rgba('#000000', 0.5));
+        for (let i = 1; i < 30; i++) {
+            this.drawHalo(this.w/2, this.h/2, menuRadius, this.hex2rgba(palette[randomColor(i%8)].hex, 0.5));
+            menuRadius-=5;
+        }
+        let x = this.w * .22;
+        let y = this.h/3;
+        this.ctx.font = `${this.h/5}px IBM Plex Sans`;
+        this.ctx.fillStyle = this.hex2rgba(palette['pink'].hex, 0.75);
+        this.ctx.fillText('COLOR', x, y);
+        let colorTextLen = this.ctx.measureText('COLOR').width;
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText('FLU', x+colorTextLen, y );
+}
+
     drawPause(ship) {
+        this.drawCircle(this.w/2, this.h/2, this.h/2, this.hex2rgba('#000000', 0.5));
         this.ctx.font = `${this.h/5}px IBM Plex Sans`;
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = ship.color;
-        this.ctx.fillText("PAUSED", this.w/2, this.h/2);        
+        this.ctx.fillText("PAUSED", this.w/2, this.h/3);        
     }
 
     hex2rgba(hex, alpha) {

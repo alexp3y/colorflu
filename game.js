@@ -5,9 +5,9 @@ const AMMO_RADIUS = 5;
 const BULLET_RADIUS = 5;
 const PLASMID_RADIUS = 2;
 const ENEMY_BURST_MAX_RADIUS = $(window).height() * 2/5;
-const ENEMY_BURST_MIN_RADIUS = ENEMY_BURST_MAX_RADIUS / 3;
-const AMMO_BURST_MAX_RADIUS = $(window).height() * 1/5;
-const AMMO_BURST_MIN_RADIUS = AMMO_BURST_MAX_RADIUS / 4;
+const ENEMY_BURST_MIN_RADIUS = ENEMY_BURST_MAX_RADIUS / 5;
+const AMMO_BURST_MAX_RADIUS = $(window).height() * 1/8;
+const AMMO_BURST_MIN_RADIUS = AMMO_BURST_MAX_RADIUS / 2;
 const BUBBLES_PER_BURST = 65;
 
 // Velocities
@@ -31,24 +31,27 @@ const SCROLL_DELAY = 6;
 class Game {
     constructor(height, width) {
         this.board = new Board(height, width);
-        this.ship = new Ship(width/3, height/2 ),
+        this.ship = new Ship(width/10, height/2 ),
         this.paused = false,
         this.gameOver = false,
         this.level = 1,
         this.levelProgress = 0,
         this.loopCounter = 0;
+        for (let i = 0; i < 5; i++) {
+            // this.board.addEnemyBurst(width/2, height/2)
+        }
         // add first enemy bursts
-        this.board.addEnemyBurst(width * 5/6, height/6)
-        this.board.addEnemyBurst(width * 5/6, height/2)
-        this.board.addEnemyBurst(width * 5/6, height * 5/6)
-        this.board.addEnemyBurst(width * 4/6, height * 1/3)
-        this.board.addEnemyBurst(width * 4/6, height * 2/3)
-        this.board.addEnemyBurst(width, height * 1/3)
-        this.board.addEnemyBurst(width, height * 2/3)
+        // this.board.addEnemyBurst(width * 5/6, height/6)
+        // this.board.addEnemyBurst(width * 5/6, height/2)
+        // this.board.addEnemyBurst(width * 5/6, height * 5/6)
+        // this.board.addEnemyBurst(width * 4/6, height * 1/3)
+        // this.board.addEnemyBurst(width * 4/6, height * 2/3)
+        // this.board.addEnemyBurst(width, height * 1/3)
+        // this.board.addEnemyBurst(width, height * 2/3)
         // add first ammo bursts
         // this.board.addAmmoBurst(width * 1/6, height/2);
-        this.board.addAmmoBurst(width * 1/6, height * 5/12);
-        this.board.addAmmoBurst(width * 1/6, height * 7/12);
+        // this.board.addAmmoBurst(width * 1/6, height * 5/12);
+        // this.board.addAmmoBurst(width * 1/6, height * 7/12);
     }
     incrementLoopCounter() {
         this.loopCounter++;
@@ -80,14 +83,14 @@ class Game {
     updateEnemyBursts() {
         this.board.enemyBursts.forEach((burst, i) => {
             burst.bubbles.forEach((enemy, j) => {                
-                if (enemy.isCollidedWith(this.ship)) {  // enemy-ship colission
+                if (enemy.isCollidedWith(this.ship)) {  // enemy-ship collision
                     if (!enemy.isDestroyed() && !this.isGameOver()) {
                         this.ship.eatEnemy(this.board.enemyBursts[i].bubbles.splice(j,1)[0]);
                     }
                 } else if (this.board.isBubbleOutOfBounds(enemy)) { // enemy boundary check
                     this.board.enemyBursts[i].bubbles.splice(j,1);
                 } else {
-                    this.board.bullets.forEach((bullet, k) => {  // enemy-bullet colissions
+                    this.board.bullets.forEach((bullet, k) => {  // enemy-bullet collisions
                         if (enemy.isCollidedWith(bullet) && !enemy.destroyed) {
                             this.board.enemyBursts[i].bubbles[j].destroy(bullet);
                             this.board.bullets[k].destroy();
@@ -108,12 +111,13 @@ class Game {
     updateAmmoBursts() {
         this.board.ammoBursts.forEach((burst, i) => {
             burst.bubbles.forEach((ammo, j) => {
-                if (ammo.isCollidedWith(this.ship)) {
+                if (ammo.isCollidedWith(this.ship)) { // ammo-ship collision
                     this.ship.pickupAmmo(this.board.ammoBursts[i].bubbles.splice(j,1)[0]);
-                } else if (this.board.isBubbleOutOfBounds(ammo)) {
+                } else if (this.board.isBubbleOutOfBounds(ammo)) { // ammo boundary check
                     this.board.ammoBursts[i].bubbles.splice(j,1);
                 }
             });
+            // burst-level actions
             if (burst.bubbles.length == 0) {
                 this.board.ammoBursts.splice(i,1);
             } else if (burst.isGrowing()) {
@@ -154,7 +158,7 @@ class Game {
                 e.yVel = e.phagoYVel + this.ship.yVel;
             }
         });
-        // when no more phago, destroy the ship
+        // when no more phago enemies, destroy the ship
         if (this.isGameOver() && !this.ship.isDestroyed() && this.ship.phagocytosis.length == 0) {
             this.ship.destroy();            
         }
@@ -464,7 +468,7 @@ class Ship extends MovableElement {
         return hasAmmo;
     }
     pickupAmmo(bubble) {
-        this.ammo[bubble.color]++;
+        this.ammo[bubble.color] += 2;
     }
     isShooting() {
         return ((this.leftTriggerOn && !this.rightTriggerOn) ||
@@ -519,9 +523,9 @@ class Ship extends MovableElement {
 
 const posNeg = () => Math.random() < 0.5 ? -1 : 1;
 const randomVelocity = () => Math.random() * posNeg() / 2;
-const randomColor = () => {
+const randomColor = (n) => {
     let keys = Object.keys(palette);
-    return keys[Math.floor(Math.random() * keys.length)];
+    return (n || n == 0) ? keys[n] : keys[Math.floor(Math.random() * keys.length)];
 }
 const radialDistance = (p, q) => { 
     var dx   = p.x - q.x;         
