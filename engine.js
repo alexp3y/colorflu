@@ -56,6 +56,16 @@ class Engine {
             this.game = new Game(height, width);
             this.graphics = new Graphics(height, width, this.game);
             this.gameLoopId = setInterval(() => {
+                if (this.game.menu.startSignal) {
+                    this.game.menu.startSignal = false;
+                    if (this.game.paused) {
+                        this.game = new Game(height, width);
+                    }
+                    this.game.titleOn = false;
+                } else if (this.game.menu.unpauseSignal) {
+                    this.game.paused = false;
+                    this.game.menu.unpauseSignal = false;
+                }
                 this.game.updateGame();
             }, REFRESH_RATE);
         }
@@ -72,7 +82,9 @@ class Engine {
     handleKeydown(event) {
         switch (event.key) {
             case ' ':
-                this.game.paused = (this.game.paused) ? false : true;
+                if (!this.game.titleOn) {
+                    this.game.paused = (this.game.paused) ? false : true;
+                }
                 event.preventDefault();
                 break;
             case 'w':
@@ -91,8 +103,12 @@ class Engine {
             case 'D':
                 this.game.ship.rightGasOn = true;
                 break;
-            case 'ArrowUp': 
-                this.game.ship.upTriggerOn = true;
+            case 'ArrowUp':
+                if (this.game.paused || this.game.titleOn) {
+                    this.game.menu.moveSelectedUp(this.game.paused);
+                } else {
+                    this.game.ship.upTriggerOn = true;
+                }
                 event.preventDefault();
                 break;
             case 'ArrowLeft': 
@@ -100,13 +116,22 @@ class Engine {
                 event.preventDefault();
                 break;
             case 'ArrowDown': 
-                this.game.ship.downTriggerOn = true;
+                if (this.game.paused || this.game.titleOn) {
+                    this.game.menu.moveSelectedDown();
+                } else {
+                    this.game.ship.downTriggerOn = true;
+                }
                 event.preventDefault();
                 break
             case 'ArrowRight': 
                 this.game.ship.rightTriggerOn = true;
                 event.preventDefault();
-                break;                
+                break;        
+            case 'Enter':
+                if (this.game.paused || this.game.titleOn) {
+                    this.game.menu.executeSelected(this.game.paused);
+                }
+                break;
             default:
                 break;        
         }
@@ -148,6 +173,8 @@ class Engine {
     }
 
     handleMousedown(event) {
-        this.game.board.addEnemyBurst(event.pageX, event.pageY);   
+        if (!this.game.paused && !this.game.titleOn) {
+            this.game.board.addEnemyBurst(event.pageX, event.pageY);   
+        }
     }    
 }

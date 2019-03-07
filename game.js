@@ -30,8 +30,10 @@ const SCROLL_DELAY = 6;
 
 class Game {
     constructor(height, width) {
-        this.board = new Board(height, width);
-        this.ship = new Ship(width/10, height/2 ),
+        this.menu = new Menu(),
+        this.board = new Board(height, width),
+        this.ship = new Ship(width/2 - 2*SHIP_RADIUS - height/9, height/2 - SHIP_RADIUS),
+        this.titleOn = true,
         this.paused = false,
         this.gameOver = false,
         this.level = 1,
@@ -41,17 +43,17 @@ class Game {
             // this.board.addEnemyBurst(width/2, height/2)
         }
         // add first enemy bursts
-        // this.board.addEnemyBurst(width * 5/6, height/6)
-        // this.board.addEnemyBurst(width * 5/6, height/2)
-        // this.board.addEnemyBurst(width * 5/6, height * 5/6)
-        // this.board.addEnemyBurst(width * 4/6, height * 1/3)
-        // this.board.addEnemyBurst(width * 4/6, height * 2/3)
-        // this.board.addEnemyBurst(width, height * 1/3)
-        // this.board.addEnemyBurst(width, height * 2/3)
+        this.board.addEnemyBurst(width * 5/6, height/6)
+        this.board.addEnemyBurst(width * 5/6, height/2)
+        this.board.addEnemyBurst(width * 5/6, height * 5/6)
+        this.board.addEnemyBurst(width * 4/6, height * 1/3)
+        this.board.addEnemyBurst(width * 4/6, height * 2/3)
+        this.board.addEnemyBurst(width, height * 1/3)
+        this.board.addEnemyBurst(width, height * 2/3)
         // add first ammo bursts
-        // this.board.addAmmoBurst(width * 1/6, height/2);
-        // this.board.addAmmoBurst(width * 1/6, height * 5/12);
-        // this.board.addAmmoBurst(width * 1/6, height * 7/12);
+        this.board.addAmmoBurst(width * 1/6, height/2);
+        this.board.addAmmoBurst(width * 1/6, height * 5/12);
+        this.board.addAmmoBurst(width * 1/6, height * 7/12);
     }
     incrementLoopCounter() {
         this.loopCounter++;
@@ -62,7 +64,7 @@ class Game {
     }    
     updateGame() {
         this.incrementLoopCounter();
-        if (!this.paused) {
+        if (!this.paused && !this.titleOn) {
             // scrolling
             this.updateScrolling();
             this.updateShip();
@@ -232,6 +234,63 @@ class Game {
     moveInfectionNoBorder
     isGameOver() {
         return this.gameOver;
+    }
+}
+
+
+class Menu {
+    constructor() {
+        this.startSignal = false,
+        this.unpauseSignal = false,
+        this.selected = "NEW_GAME";
+    }
+    moveSelectedDown() {
+        switch (this.selected) {
+            case "RESUME":
+                this.selected = "NEW_GAME";
+                break;
+            case "NEW_GAME":
+                this.selected = "CONTROLS";
+                break;
+            case "CONTROLS":
+                this.selected = "SOUND";
+                break;
+            default:
+                break;
+        }
+    }
+    moveSelectedUp(paused) {
+        switch (this.selected) {
+            case "NEW_GAME":
+                if (paused) {
+                    this.selected = "RESUME";
+                }
+                break;
+            case "CONTROLS":
+                this.selected = "NEW_GAME";
+                break;
+            case "SOUND":
+                this.selected = "CONTROLS";
+                break;
+            default:
+                break;
+        }
+    }
+    executeSelected() {
+        switch (this.selected) {
+            case "RESUME":
+                this.unpauseSignal = true;
+                break;
+            case "NEW_GAME":
+                this.startSignal = true;
+                break;
+            case "CONTROLS":
+                break;
+            case "SOUND":
+                break;
+            default:
+                break;
+        }
     }
 }
 

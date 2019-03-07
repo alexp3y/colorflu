@@ -7,28 +7,27 @@ class Graphics {
         this.progressColor = '',
         this.gradBaseColor = '',
         this.gradOffsetColor = '',
-        this.capsuleImg = new Image(),
         this.ctx = this.initCanvas();
-        this.initImages();
 
     }
     renderGame(game) {
         this.updateProgressColors(game.levelProgress);
         this.clearScreen();
-        this.drawBoard(game.board, game.level);
-        if (game.ship.isDestroyed()) {
-            this.drawDestroyedShip(game.ship);
+        if (game.titleOn) {
+            this.drawTitle(game);
+            this.drawMenu(game.menu, game.paused)
         } else {
-            this.drawShip(game.ship);
+            this.drawBoard(game.board, game.level);
+            if (game.paused) {
+                this.drawPause(game.ship);
+                this.drawMenu(game.menu, game.paused)
+            }
+            if (game.ship.isDestroyed()) {
+                this.drawDestroyedShip(game.ship);
+            } else {
+                this.drawShip(game.ship, game.paused);
+            }
         }
-        this.drawScore(game.score);
-        if (game.paused) {
-            this.drawPause(game.ship);
-        }
-        this.ctx.fillStyle = 'red';
-        
-        this.drawTitle(game);
-        this.drawImage()
     }
     initCanvas() {
         let canvas = document.getElementById('board');
@@ -103,7 +102,7 @@ class Graphics {
         board.ammoBursts.forEach(burst => burst.bubbles.forEach(a => this.drawCircle(a.x, a.y, a.r, this.hex2rgba(palette[a.color].hex, 0.75))));
         board.bullets.forEach(bullet => this.drawCircle(bullet.x, bullet.y, bullet.r, palette[bullet.color].hex));
     }
-    drawShip(ship) {
+    drawShip(ship, paused) {
         // draw ammo halo
         let haloWidth = ship.r + 2;
         Object.keys(ship.ammo).forEach(a => {
@@ -115,7 +114,8 @@ class Graphics {
         // draw enemies in phagocytosis
         ship.phagocytosis.forEach(e => this.drawHalo(e.x, e.y, e.r, this.progressColor, 1));
         // DRAW SHIP
-        this.drawCircle(ship.x, ship.y, SHIP_RADIUS, palette[ship.color].hex);
+        let alpha = (paused) ? 0.1 : 0.9;
+        this.drawCircle(ship.x, ship.y, SHIP_RADIUS, this.hex2rgba(palette[ship.color].hex, alpha));
         // draw phagocytosis cells
         ship.phagocytosis.forEach(e => {
             this.ctx.beginPath();       
@@ -190,14 +190,56 @@ class Graphics {
         let colorTextLen = this.ctx.measureText('COLOR').width;
         this.ctx.fillStyle = 'black';
         this.ctx.fillText('FLU', x+colorTextLen, y );
-}
+    }
 
     drawPause(ship) {
         this.drawCircle(this.w/2, this.h/2, this.h/2, this.hex2rgba('#000000', 0.5));
         this.ctx.font = `${this.h/5}px IBM Plex Sans`;
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = ship.color;
-        this.ctx.fillText("PAUSED", this.w/2, this.h/3);        
+        this.ctx.fillText("PAUSED", this.w/2, this.h/3);  
+    }
+    
+    drawMenu(menu, paused) {
+        this.ctx.textAlign = "left";
+        this.ctx.font = `${this.h/15}px IBM Plex Sans`;
+        this.ctx.fillStyle = this.progressColor;
+        let margin = this.h/9;
+        let optionWidth = this.w/2 - margin;
+        let option1Height = this.h/2;
+        let option2Height = this.h/2 + margin;
+        let option3Height = this.h/2 + 2*margin;
+        let option4Height = this.h/2 + 3*margin;
+        let selectorWidth = optionWidth - 2*SHIP_RADIUS;
+        let selectorHeight = 0;
+        if (paused) {
+            this.ctx.fillText("resume", optionWidth, option1Height);  
+            this.ctx.fillText("new game", optionWidth, option2Height);  
+            this.ctx.fillText("controls", optionWidth, option3Height);
+            this.ctx.fillText("sound", optionWidth, option4Height);
+        } else {
+            this.ctx.fillText("new game", optionWidth, option1Height);  
+            this.ctx.fillText("controls", optionWidth, option2Height);
+            this.ctx.fillText("sound", optionWidth, option3Height);
+        }
+        switch (menu.selected) {
+            case "RESUME":
+                selectorHeight = option1Height;
+                break;
+            case "NEW_GAME":
+                selectorHeight = (paused) ? option2Height : option1Height;
+                break;
+            case "CONTROLS":
+                selectorHeight = (paused) ? option3Height : option2Height;
+                break;
+            case "SOUND":
+                selectorHeight = (paused) ? option4Height : option3Height;
+                break;
+            default:
+                break;
+        }
+        selectorHeight -= SHIP_RADIUS;
+        this.drawCircle(selectorWidth, selectorHeight, SHIP_RADIUS, this.hex2rgba(palette['pink'].hex, 0.8));                
     }
 
     hex2rgba(hex, alpha) {
