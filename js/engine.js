@@ -20,10 +20,6 @@ const palette = {
         hex: '#fde02a',
         powerLvl: 5
     },
-    // lightPurple: {
-    //     hex: '#b7abee',
-    //     powerLvl: 6
-    // },
     purple: {
         hex: '#390f59',
         powerLvl: 7
@@ -56,27 +52,24 @@ class Engine {
             this.game = new Game(height, width);
             this.graphics = new Graphics(height, width, this.game);
             this.gameLoopId = setInterval(() => {
-                if (this.game.menu.startSignal) {
-                    this.game.menu.startSignal = false;
-                    if (this.game.paused) {
-                        this.game = new Game(height, width);
-                    }
-                    this.game.titleOn = false;
-                } else if (this.game.menu.unpauseSignal) {
-                    this.game.paused = false;
-                    this.game.menu.unpauseSignal = false;
-                }
-                this.game.updateGame();
+                this.gameLoop();
             }, REFRESH_RATE);
         }
         window.requestAnimationFrame(render);
     }
 
-    turnOff() {
-        if (this.on) {
-            this.on = false;
-            clearInterval(this.intervalId);
+    gameLoop() {
+        if (this.game.menu.startSignal) {
+            this.game.menu.startSignal = false;
+            if (this.game.paused) {
+                this.game = new Game(this.game.board.h, this.game.board.w);
+            }
+            this.game.titleOn = false;
+        } else if (this.game.menu.unpauseSignal) {
+            this.game.paused = false;
+            this.game.menu.unpauseSignal = false;
         }
+        this.game.updateGame();
     }
     
     handleKeydown(event) {
@@ -89,42 +82,42 @@ class Engine {
                 break;
             case 'w':
             case 'W':
-                this.game.ship.upGasOn = true;
+                this.game.ship.upTriggerOn = true;
                 break;
             case 'a':
             case 'A': 
-                this.game.ship.leftGasOn = true;
+                this.game.ship.leftTriggerOn = true;
                 break;
             case 's':
             case 'S':
-                this.game.ship.downGasOn = true;
+                this.game.ship.downTriggerOn = true;
                 break
             case 'd':
             case 'D':
-                this.game.ship.rightGasOn = true;
+                this.game.ship.rightTriggerOn = true;
                 break;
             case 'ArrowUp':
                 if (this.game.paused || this.game.titleOn) {
                     this.game.menu.moveSelectedUp(this.game.paused);
                 } else {
-                    this.game.ship.upTriggerOn = true;
+                    this.game.ship.upGasOn = true;
                 }
                 event.preventDefault();
                 break;
             case 'ArrowLeft': 
-                this.game.ship.leftTriggerOn = true;
+                this.game.ship.leftGasOn = true;
                 event.preventDefault();
                 break;
             case 'ArrowDown': 
                 if (this.game.paused || this.game.titleOn) {
                     this.game.menu.moveSelectedDown();
                 } else {
-                    this.game.ship.downTriggerOn = true;
+                    this.game.ship.downGasOn = true;
                 }
                 event.preventDefault();
                 break
             case 'ArrowRight': 
-                this.game.ship.rightTriggerOn = true;
+                this.game.ship.rightGasOn = true;
                 event.preventDefault();
                 break;        
             case 'Enter':
@@ -141,34 +134,34 @@ class Engine {
         switch (event.key) {
             case 'w':
             case 'W':
-                this.game.ship.upGasOn = false;
+                this.game.ship.upTriggerOn = false;
                 break;
             case 'a':
             case 'A': 
-                this.game.ship.leftGasOn = false;
+                this.game.ship.leftTriggerOn = false;
                 break;
             case 's':
             case 'S':
-                this.game.ship.downGasOn = false;
+                this.game.ship.downTriggerOn = false;
                 break
             case 'd':
             case 'D':
-                this.game.ship.rightGasOn = false;
+                this.game.ship.rightTriggerOn = false;
                 break;
             case 'ArrowUp': 
-                this.game.ship.upTriggerOn = false;
+                this.game.ship.upGasOn = false;
                 break;
             case 'ArrowLeft': 
-                this.game.ship.leftTriggerOn = false;
+                this.game.ship.leftGasOn = false;
                 break;
             case 'ArrowDown': 
-                this.game.ship.downTriggerOn = false;
+                this.game.ship.downGasOn = false;
                 break
             case 'ArrowRight': 
-                this.game.ship.rightTriggerOn = false;
+                this.game.ship.rightGasOn = false;
                 break;               
             default:
-            break;        
+                break;        
         }
     }
 

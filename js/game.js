@@ -9,7 +9,6 @@ const ENEMY_BURST_MIN_RADIUS = ENEMY_BURST_MAX_RADIUS / 5;
 const AMMO_BURST_MAX_RADIUS = $(window).height() * 1/8;
 const AMMO_BURST_MIN_RADIUS = AMMO_BURST_MAX_RADIUS / 2;
 const BUBBLES_PER_BURST = 65;
-
 // Velocities
 const SHIP_VELOCITY = 3;
 const BULLET_VELOCITY = 6;
@@ -17,15 +16,13 @@ const BULLET_VELOCITY_DIAG = Math.sqrt(Math.pow(BULLET_VELOCITY, 2)/2);
 const SCROLL_ADJUST_VELOCITY = 2;
 const PHAGO_VELOCITY = .1;
 const PHAGO_PENALTY = .8;
-
+// Clock Delays
+const SHIP_TRIGGER_DELAY = 3;
+// Other stuff...
 const GRADIENT_OFFSET = 100;
 const INFECT_RADIUS_OFFSET = 5;
 const INFECTION_LIMIT = 50;
 const DESTROYED_SHIP_FRAGMENTS = 16;
-
-// Clock Delays
-const SHIP_TRIGGER_DELAY = 3;
-const SCROLL_DELAY = 6;
 
 
 class Game {
@@ -39,9 +36,6 @@ class Game {
         this.level = 1,
         this.levelProgress = 0,
         this.loopCounter = 0;
-        for (let i = 0; i < 5; i++) {
-            // this.board.addEnemyBurst(width/2, height/2)
-        }
         // add first enemy bursts
         this.board.addEnemyBurst(width * 5/6, height/6)
         this.board.addEnemyBurst(width * 5/6, height/2)
@@ -57,7 +51,6 @@ class Game {
     }
     incrementLoopCounter() {
         this.loopCounter++;
-        // if (this.loopCounter > 12) this.loopCounter = 1;  // 12 lets us do delayed effects at modulo 2, 3, 4, 6, 12
     }
     isDelayReady(delay) {
         return this.loopCounter%delay == 0;
@@ -65,13 +58,11 @@ class Game {
     updateGame() {
         this.incrementLoopCounter();
         if (!this.paused && !this.titleOn) {
-            // scrolling
             this.updateScrolling();
             this.updateShip();
             this.updateEnemyBursts();
             this.updateAmmoBursts();
             this.updateBullets();
-            // move all elements and update level progress
             let scrollAdjust = this.moveGameElements();
             this.levelProgress += -(scrollAdjust);
         }
@@ -136,15 +127,12 @@ class Game {
         });        
     }
     updateShip() {
-        // update ships velocity
         this.board.enforceShipBoundary(this.ship);
         this.ship.applyGas();
+        this.ship.applyPhagoPenalty();
         if (this.board.leftScrollActive || this.board.rightScrollActive) {
             this.ship.xVel = 0;
         }
-        let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
-        this.ship.xVel *= phagoPenaltyMultiplier;
-        this.ship.yVel *= phagoPenaltyMultiplier;
         // check if its time to end this rodeo
         if (this.isGameOver() || this.ship.phagocytosis.length + this.ship.infection.length >= INFECTION_LIMIT) {
             this.gameOver = true;
@@ -197,8 +185,7 @@ class Game {
         if (!this.isGameOver()) {
             if (this.board.leftScrollActive) scrollAdjust += SCROLL_ADJUST_VELOCITY;
             else if (this.board.rightScrollActive) scrollAdjust -= SCROLL_ADJUST_VELOCITY;
-            let phagoPenaltyMultiplier = Math.pow(PHAGO_PENALTY, this.ship.phagocytosis.length);
-            scrollAdjust *= phagoPenaltyMultiplier;
+            scrollAdjust *= this.ship.getPhagoPenaltyMultiplier();
         }
         return scrollAdjust;
     }
@@ -283,6 +270,7 @@ class Menu {
                 break;
             case "NEW_GAME":
                 this.startSignal = true;
+                this.selected = "RESUME";
                 break;
             case "CONTROLS":
                 break;
@@ -480,6 +468,14 @@ class Ship extends MovableElement {
         } else {
             this.xVel = (this.leftGasOn) ? -SHIP_VELOCITY : 0;
         }
+    }
+    getPhagoPenaltyMultiplier() {
+        return Math.pow(PHAGO_PENALTY, this.phagocytosis.length);
+    }
+    applyPhagoPenalty() {
+        let phagoPenaltyMultiplier = this.getPhagoPenaltyMultiplier();
+        this.xVel *= phagoPenaltyMultiplier;
+        this.yVel *= phagoPenaltyMultiplier;
     }
     addInfection(enemy) {
         enemy.x = this.x + ((this.r - INFECT_RADIUS_OFFSET - PLASMID_RADIUS) * Math.cos(enemy.phagoTheta));

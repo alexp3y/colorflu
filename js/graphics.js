@@ -57,8 +57,8 @@ class Graphics {
         // progress color
         let progressShade = Math.floor(progress/9);
         if (progress < 3000) {
-            if (gradOffsetShade - progressShade < 50) {
-                progressShade += 150;
+            if (gradOffsetShade - progressShade < 0) {
+                progressShade += 130;
             }
             this.progressColor = this.makeColor(progressShade);
         } else {
