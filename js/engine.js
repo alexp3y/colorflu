@@ -72,17 +72,18 @@ class Engine {
             this.game.paused = false;
             this.game.menu.unpauseSignal = false;
         } else if (this.game.ship.isDestroyed()) {
-            if (this.titleOnSignalable) {
-                this.timeout = setTimeout(() => {
-                    if (this.titleOnSignalable) {
-                        this.game.titleOn = true;
-                    } else {
-                        this.titleOnSignalable = false;
-                    }
-                }, 5000);
-            } else {
-                clearTimeout(this.timeout);
-            }
+            setTimeout(titleOn, 5000);
+            // if (this.titleOnSignalable) {
+            //     this.timeout = setTimeout(() => {
+            //         if (this.titleOnSignalable) {
+            //             this.game.titleOn = true;
+            //         } else {
+            //             this.titleOnSignalable = false;
+            //         }
+            //     }, 5000);
+            // } else {
+            //     clearTimeout(this.timeout);
+            // }
         }
         this.game.updateGame();
     }
@@ -186,4 +187,20 @@ class Engine {
             this.game.board.addEnemyBurst(event.pageX, event.pageY);   
         }
     }    
+}
+
+function titleOn() {
+    engine.game.titleOn = true;
+}
+
+function randomEnemies() {
+    if (!engine.game.paused && !engine.game.gameOver) {
+        xPos = randomPos(engine.game.board.w) + engine.game.board.w/2;
+        yPos =  randomPos(engine.game.board.h);
+        if (posNeg()) {
+            engine.game.board.addEnemyBurst(xPos, yPos);
+        } else {
+            engine.game.board.addEnemyBurst(xPos, yPos);
+        }
+    }
 }

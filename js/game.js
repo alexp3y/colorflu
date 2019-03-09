@@ -35,6 +35,7 @@ class Game {
         this.gameOver = false,
         this.level = 1,
         this.levelProgress = 0,
+        this.randomBurstId = 0,
         this.loopCounter = 0;
         // add first enemy bursts
         this.board.addEnemyBurst(width * 5/6, height/6)
@@ -65,6 +66,12 @@ class Game {
             this.updateBullets();
             let scrollAdjust = this.moveGameElements();
             this.levelProgress += -(scrollAdjust);
+            this.checkProgress();
+        }
+    }
+    checkProgress() {
+        if (this.levelProgress >= 1200 && this.randomBurstId == 0) {
+            this.randomBurstId = setInterval(randomEnemies, 2000);
         }
     }
     updateScrolling() {
@@ -578,6 +585,7 @@ class Ship extends MovableElement {
 
 const posNeg = () => Math.random() < 0.5 ? -1 : 1;
 const randomVelocity = () => Math.random() * posNeg() / 2;
+const randomPos = (dim) => Math.random() * dim;
 const randomColor = (n) => {
     let keys = Object.keys(palette);
     return (n || n == 0) ? keys[n] : keys[Math.floor(Math.random() * keys.length)];
