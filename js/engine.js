@@ -59,15 +59,17 @@ class Engine {
     }
 
     gameLoop() {
-        if (this.game.menu.startSignal) {
-            this.game.menu.startSignal = false;
-            if (this.game.paused) {
+        if (this.game.menu.restartSignal) {
+            this.game.menu.restartSignal = false;
+            // if (this.game.paused) {
                 this.game = new Game(this.game.board.h, this.game.board.w);
-            }
+            // }
             this.game.titleOn = false;
         } else if (this.game.menu.unpauseSignal) {
             this.game.paused = false;
             this.game.menu.unpauseSignal = false;
+        } else if (this.game.ship.isDestroyed()) {
+            this.game.titleOn = true;
         }
         this.game.updateGame();
     }

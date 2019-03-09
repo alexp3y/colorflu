@@ -227,7 +227,7 @@ class Game {
 
 class Menu {
     constructor() {
-        this.startSignal = false,
+        this.restartSignal = false,
         this.unpauseSignal = false,
         this.selected = "NEW_GAME";
     }
@@ -269,7 +269,7 @@ class Menu {
                 this.unpauseSignal = true;
                 break;
             case "NEW_GAME":
-                this.startSignal = true;
+                this.restartSignal = true;
                 this.selected = "RESUME";
                 break;
             case "CONTROLS":
@@ -544,7 +544,7 @@ class Ship extends MovableElement {
         return selected;
     }
     shootBullet() {
-        if (this.hasAmmo()) {
+        if (!this.isDestroyed() && this.hasAmmo()) {
             // select the highest power ammo color available
             let selected = this.selectHighestPowerAmmo();
             let bullet = new Bullet(this.x, this.y, BULLET_RADIUS, selected);

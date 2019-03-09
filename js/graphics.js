@@ -18,14 +18,14 @@ class Graphics {
             this.drawMenu(game.menu, game.paused)
         } else {
             this.drawBoard(game.board, game.level);
-            if (game.paused) {
-                this.drawPause(game.ship);
-                this.drawMenu(game.menu, game.paused)
-            }
             if (game.ship.isDestroyed()) {
                 this.drawDestroyedShip(game.ship);
             } else {
                 this.drawShip(game.ship, game.paused);
+            }
+            if (game.paused) {
+                this.drawPause(game.ship);
+                this.drawMenu(game.menu, game.paused)
             }
         }
     }
@@ -40,13 +40,6 @@ class Graphics {
     }
     drawImage() {
         this.ctx.drawImage(this.capsuleImg, 10, 10);
-        // let map = this.ctx.getImageData(10,10,50,100);
-        // for (var p = 0, len = map.data.length; p < len; p += 4) {
-        //     map.data[p] = this.progressShade;
-        //     map.data[p+1] = this.progressShade;
-        //     map.data[p+2] = this.progressShade;
-        // }
-        // this.ctx.putImageData(map, 10, 10);      
     }
     updateProgressColors(progress) {
         // gradient colors
@@ -177,9 +170,9 @@ class Graphics {
 
     drawTitle(game) {
         let menuRadius = this.h * 2/3;
-        this.drawCircle(this.w/2, this.h/2, menuRadius, this.hex2rgba('#000000', 0.5));
+        this.drawCircle(this.w/2, this.h/2, menuRadius, this.hex2rgba('#000000', 0.5), );
         for (let i = 1; i < 30; i++) {
-            this.drawHalo(this.w/2, this.h/2, menuRadius, this.hex2rgba(palette[randomColor(i%8)].hex, 0.5));
+            this.drawHalo(this.w/2, this.h/2, menuRadius, this.hex2rgba(palette[randomColor(i%8)].hex, 0.5), 1);
             menuRadius-=5;
         }
         let x = this.w * .22;
@@ -203,7 +196,7 @@ class Graphics {
     drawMenu(menu, paused) {
         this.ctx.textAlign = "left";
         this.ctx.font = `${this.h/15}px IBM Plex Sans`;
-        this.ctx.fillStyle = this.progressColor;
+        this.ctx.fillStyle = 'black';
         let margin = this.h/9;
         let optionWidth = this.w/2 - margin;
         let option1Height = this.h/2;
