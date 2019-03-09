@@ -57,7 +57,7 @@ class Game {
     }    
     updateGame() {
         this.incrementLoopCounter();
-        if (!this.paused && !this.titleOn) {
+        if ((!this.paused && !this.titleOn) || this.ship.isDestroyed()) {
             this.updateScrolling();
             this.updateShip();
             this.updateEnemyBursts();

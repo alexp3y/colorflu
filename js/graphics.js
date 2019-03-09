@@ -13,20 +13,20 @@ class Graphics {
     renderGame(game) {
         this.updateProgressColors(game.levelProgress);
         this.clearScreen();
-        if (game.titleOn) {
-            this.drawTitle(game);
-            this.drawMenu(game.menu, game.paused)
-        } else {
+        if (!game.titleOn || game.gameOver) {
             this.drawBoard(game.board, game.level);
             if (game.ship.isDestroyed()) {
                 this.drawDestroyedShip(game.ship);
             } else {
                 this.drawShip(game.ship, game.paused);
-            }
-            if (game.paused) {
-                this.drawPause(game.ship);
-                this.drawMenu(game.menu, game.paused)
-            }
+            }                       
+        }
+        if (game.paused) {
+            this.drawPause(game.ship);
+            this.drawMenu(game.menu, game.paused)
+        } else if (game.titleOn) {
+            this.drawTitle(game);
+            this.drawMenu(game.menu, game.paused);
         }
     }
     initCanvas() {

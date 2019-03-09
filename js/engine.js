@@ -43,6 +43,8 @@ class Engine {
         this.game = null,
         this.graphics = null,
         this.intervalId = null,
+        this.titleOnSignalable = true,
+        this.timeout = 0,
         this.on = false;
     }
 
@@ -61,15 +63,26 @@ class Engine {
     gameLoop() {
         if (this.game.menu.restartSignal) {
             this.game.menu.restartSignal = false;
-            // if (this.game.paused) {
+            if (this.game.paused || this.game.gameOver) {
                 this.game = new Game(this.game.board.h, this.game.board.w);
-            // }
+                this.titleOnSignalable = true;
+            }
             this.game.titleOn = false;
         } else if (this.game.menu.unpauseSignal) {
             this.game.paused = false;
             this.game.menu.unpauseSignal = false;
         } else if (this.game.ship.isDestroyed()) {
-            this.game.titleOn = true;
+            if (this.titleOnSignalable) {
+                this.timeout = setTimeout(() => {
+                    if (this.titleOnSignalable) {
+                        this.game.titleOn = true;
+                    } else {
+                        this.titleOnSignalable = false;
+                    }
+                }, 5000);
+            } else {
+                clearTimeout(this.timeout);
+            }
         }
         this.game.updateGame();
     }
@@ -79,6 +92,7 @@ class Engine {
             case ' ':
                 if (!this.game.titleOn) {
                     this.game.paused = (this.game.paused) ? false : true;
+                    this.game.menu.selected = "RESUME";
                 }
                 event.preventDefault();
                 break;
